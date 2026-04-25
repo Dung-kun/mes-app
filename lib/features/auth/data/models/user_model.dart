@@ -1,7 +1,7 @@
 import 'package:template_catra_mobile/features/auth/domain/entities/session_user.dart';
 
 class UserModel {
-  final String id;
+  final int id;
   final String username;
   final String name;
   final String? serialNumber;
@@ -25,20 +25,20 @@ class UserModel {
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     final token = json['token'] ?? '';
-    final data = json['data'] ?? {};
+    final data = json['user'] ?? {};
     return UserModel(
-      id: data['id'] ?? '',
+      id: data['id'] ?? 0,
       username: data['username'] ?? '',
       name: data['name'] ?? '',
       serialNumber: data['serial_number'] ?? '',
       password: '',
       token: token,
-      status: data['status'],
+      status: data['status'] ?? '',
       createdAt: data['created_at'] != null 
-          ? DateTime.parse(json['created_at']) 
+          ? DateTime.parse(data['created_at']) 
           : DateTime.now(),
       updatedAt: data['updated_at'] != null 
-          ? DateTime.parse(json['updated_at']) 
+          ? DateTime.parse(data['updated_at']) 
           : DateTime.now(),
     );
   }
@@ -64,6 +64,7 @@ class UserModel {
       permissions: [],
       serialNumber: serialNumber ?? '',
       status: status,
+      token: token,
       // createdAt: createdAt,
       // updatedAt: updatedAt,
     );
@@ -76,7 +77,7 @@ class UserModel {
       name: sessionUser.displayName,
       serialNumber: sessionUser.serialNumber ?? '',
       password: '',  // Password is not stored in session user
-      token: '', // Token is not stored in session user
+      token: sessionUser.token, // Token is not stored in session user
       status: sessionUser.status,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
@@ -84,7 +85,7 @@ class UserModel {
   }
 
   UserModel copyWith({
-    String? id,
+    int? id,
     String? username,
     String? name,
     String? serialNumber,

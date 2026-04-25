@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../shared/widgets/app_card.dart';
-import '../../../lot/presentation/providers/lot_provider.dart';
-import '../../../lot/presentation/widgets/create_lot_form.dart';
-import '../../../lot/presentation/widgets/import_lot_section.dart';
-import '../../../lot/presentation/widgets/lot_table.dart';
-import '../../../lot/presentation/widgets/search_bar.dart';
+import 'package:template_catra_mobile/shared/widgets/app_card.dart';
+import 'package:template_catra_mobile/features/lot/presentation/providers/lot_provider.dart';
+import 'package:template_catra_mobile/features/lot/presentation/widgets/create_lot_form.dart';
+import 'package:template_catra_mobile/features/lot/presentation/widgets/import_lot_section.dart';
+import 'package:template_catra_mobile/features/lot/presentation/widgets/lot_table.dart';
+import 'package:template_catra_mobile/features/lot/presentation/widgets/search_bar.dart';
 
 class MaterialBatchCodeScreen extends ConsumerStatefulWidget {
   const MaterialBatchCodeScreen({super.key});
@@ -37,7 +37,9 @@ class _MaterialBatchCodeScreenState extends ConsumerState<MaterialBatchCodeScree
 
   @override
   Widget build(BuildContext context) {
-    final lotState = ref.watch(lotProvider);
+    final error = ref.watch(lotProvider.select((s) => s.error));
+    final isLoading = ref.watch(lotProvider.select((s) => s.isLoading));
+    final lots = ref.watch(lotProvider.select((s) => s.lots));
 
     return Scaffold(
       body: RefreshIndicator(
@@ -63,13 +65,13 @@ class _MaterialBatchCodeScreenState extends ConsumerState<MaterialBatchCodeScree
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Quan Lý Lô',
+                        'Quản Lý Lô',
                         style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       Text(
-                        'Quan lý thông tin lô sa n xuât',
+                        'Quản lý thông tin lô sản xuất',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.grey.shade600,
                         ),
@@ -82,16 +84,16 @@ class _MaterialBatchCodeScreenState extends ConsumerState<MaterialBatchCodeScree
               const SizedBox(height: 24),
               
               // SECTION 1: CREATE LOT FORM
-              AppCard(
-                title: 'Thêm thu công',
+              const AppCard(
+                title: 'Thêm thủ công',
                 child: CreateLotForm(),
               ),
               
               const SizedBox(height: 24),
               
               // SECTION 2: IMPORT EXCEL
-              AppCard(
-                title: 'Nhâp t Excel',
+              const AppCard(
+                title: 'Nhập từ Excel',
                 child: ImportLotSection(),
               ),
               
@@ -104,12 +106,12 @@ class _MaterialBatchCodeScreenState extends ConsumerState<MaterialBatchCodeScree
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Search bar and total count
-                    LotSearchBar(),
+                    const LotSearchBar(),
                     
                     const SizedBox(height: 16),
                     
                     // Error display
-                    if (lotState.error != null)
+                    if (error != null)
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(12),
@@ -125,7 +127,7 @@ class _MaterialBatchCodeScreenState extends ConsumerState<MaterialBatchCodeScree
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                lotState.error!,
+                                error!,
                                 style: TextStyle(color: Colors.red.shade600, fontSize: 14),
                               ),
                             ),
@@ -141,7 +143,7 @@ class _MaterialBatchCodeScreenState extends ConsumerState<MaterialBatchCodeScree
                       ),
                     
                     // Loading indicator for refresh
-                    if (lotState.isLoading && lotState.lots.isNotEmpty)
+                    if (isLoading && lots.isNotEmpty)
                       const Center(
                         child: Padding(
                           padding: EdgeInsets.all(16),
@@ -150,7 +152,7 @@ class _MaterialBatchCodeScreenState extends ConsumerState<MaterialBatchCodeScree
                       ),
                     
                     // Lot table
-                    LotTable(),
+                    const LotTable(),
                   ],
                 ),
               ),

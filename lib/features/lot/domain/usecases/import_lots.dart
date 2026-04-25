@@ -1,5 +1,6 @@
-import '../entities/lot.dart';
-import '../repositories/lot_repository.dart';
+import 'package:template_catra_mobile/core/models/import_result.dart';
+import 'package:template_catra_mobile/core/utils/result.dart';
+import 'package:template_catra_mobile/features/lot/domain/repositories/lot_repository.dart';
 
 class ImportLotsParams {
   final String filePath;
@@ -16,7 +17,7 @@ class ImportLotsUseCase {
 
   ImportLotsUseCase({required this.repository});
 
-  Future<Result<List<Lot>>> call(ImportLotsParams params) async {
+  Future<Result<ImportResult>> call(ImportLotsParams params) async {
     return await repository.importLots(
       filePath: params.filePath,
       replace: params.replace,

@@ -1,11 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../domain/entities/lot.dart';
-import '../../domain/repositories/lot_repository.dart';
-import '../../domain/usecases/get_lots.dart';
-import '../../domain/usecases/create_lot.dart';
-import '../../domain/usecases/update_lot.dart';
-import '../../domain/usecases/delete_lot.dart';
-import '../../domain/usecases/import_lots.dart';
+import 'package:template_catra_mobile/core/models/import_result.dart';
+import 'package:template_catra_mobile/core/models/paginated_result.dart';
+import 'package:template_catra_mobile/core/utils/result.dart';
+import 'package:template_catra_mobile/features/lot/data/datasources/lot_remote_datasource.dart';
+import 'package:template_catra_mobile/features/lot/data/repositories/lot_repository_impl.dart';
+import 'package:template_catra_mobile/features/lot/domain/entities/lot.dart';
+import 'package:template_catra_mobile/features/lot/domain/repositories/lot_repository.dart';
+import 'package:template_catra_mobile/features/lot/domain/usecases/get_lots.dart';
+import 'package:template_catra_mobile/features/lot/domain/usecases/create_lot.dart';
+import 'package:template_catra_mobile/features/lot/domain/usecases/update_lot.dart';
+import 'package:template_catra_mobile/features/lot/domain/usecases/delete_lot.dart';
+import 'package:template_catra_mobile/features/lot/domain/usecases/import_lots.dart';
 
 class LotState {
   final List<Lot> lots;
@@ -19,6 +24,7 @@ class LotState {
   final int pageSize;
   final int totalCount;
   final String searchQuery;
+  final ImportResult? importResult;
 
   const LotState({
     this.lots = const [],
@@ -32,6 +38,7 @@ class LotState {
     this.pageSize = 10,
     this.totalCount = 0,
     this.searchQuery = '',
+    this.importResult,
   });
 
   LotState copyWith({
@@ -46,7 +53,9 @@ class LotState {
     int? pageSize,
     int? totalCount,
     String? searchQuery,
+    ImportResult? importResult,
     bool clearError = false,
+    bool clearImportResult = false,
   }) {
     return LotState(
       lots: lots ?? this.lots,
@@ -60,6 +69,7 @@ class LotState {
       pageSize: pageSize ?? this.pageSize,
       totalCount: totalCount ?? this.totalCount,
       searchQuery: searchQuery ?? this.searchQuery,
+      importResult: clearImportResult ? null : importResult ?? this.importResult,
     );
   }
 }
@@ -84,14 +94,16 @@ class LotNotifier extends StateNotifier<LotState> {
         _importLotsUseCase = importLotsUseCase,
         super(const LotState());
 
-  Future<void> fetchLots({bool refresh = false}) async {
+  Future<void> fetchLots({int page = 0,  bool refresh = false}) async {
     if (refresh) {
       state = state.copyWith(currentPage: 1, clearError: true);
     }
-
+    if(page > 0) {
+      state = state.copyWith(currentPage: page, clearError: true);
+    }
     state = state.copyWith(isLoading: true, clearError: true);
 
-    final result = await _getLotsUseCase.call(GetLotsParams(
+    final Result<PaginatedResult<Lot>> result = await _getLotsUseCase.call(GetLotsParams(
       page: state.currentPage,
       pageSize: state.pageSize,
       search: state.searchQuery.isNotEmpty ? state.searchQuery : null,
@@ -99,9 +111,11 @@ class LotNotifier extends StateNotifier<LotState> {
 
     if (result.isSuccess && result.data != null) {
       state = state.copyWith(
-        lots: result.data!,
+        lots: result.data!.items,
         isLoading: false,
-        totalCount: result.data!.length, // In real app, get total count from API
+        totalCount: result.data!.total,
+        currentPage: result.data!.page,
+        pageSize: result.data!.perPage,
       );
     } else {
       state = state.copyWith(
@@ -111,17 +125,19 @@ class LotNotifier extends StateNotifier<LotState> {
     }
   }
 
+  void clearImportResult() {
+    state = state.copyWith(clearImportResult: true);
+  }
+  
   Future<void> createLot({
     required String code,
     required String description,
-    required String createdBy,
   }) async {
     state = state.copyWith(isCreating: true, clearError: true);
 
     final result = await _createLotUseCase.call(CreateLotParams(
       code: code,
       description: description,
-      createdBy: createdBy,
     ));
 
     if (result.isSuccess && result.data != null) {
@@ -188,7 +204,7 @@ class LotNotifier extends StateNotifier<LotState> {
       replace: replace,
     ));
 
-    if (result.isSuccess && result.data != null) {
+    if (result.isSuccess && result.data?.success == true) {
       // Refresh the list
       await fetchLots(refresh: true);
     } else {
@@ -228,8 +244,7 @@ class LotNotifier extends StateNotifier<LotState> {
 
 // Providers
 final lotRepositoryProvider = Provider<LotRepository>((ref) {
-  // In a real app, inject the actual repository implementation
-  throw UnimplementedError('LotRepository not implemented');
+  return LotRepositoryImpl(remoteDataSource: ref.watch(lotRemoteDataSourceProvider));
 });
 
 final getLotsUseCaseProvider = Provider<GetLotsUseCase>((ref) {
@@ -256,6 +271,7 @@ final importLotsUseCaseProvider = Provider<ImportLotsUseCase>((ref) {
   final repository = ref.watch(lotRepositoryProvider);
   return ImportLotsUseCase(repository: repository);
 });
+
 
 final lotProvider = StateNotifierProvider<LotNotifier, LotState>((ref) {
   return LotNotifier(

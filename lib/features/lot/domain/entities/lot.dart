@@ -6,7 +6,7 @@ class Lot {
   final String? editedBy;
   final DateTime createdAt;
   final DateTime updatedAt;
-  final int orderBy;
+  final int? orderBy;
 
   const Lot({
     required this.id,
@@ -16,7 +16,7 @@ class Lot {
     this.editedBy,
     required this.createdAt,
     required this.updatedAt,
-    required this.orderBy,
+    this.orderBy,
   });
 
   List<Object?> get props => [

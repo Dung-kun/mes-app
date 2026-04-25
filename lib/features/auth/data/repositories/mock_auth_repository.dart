@@ -15,7 +15,7 @@ class MockAuthRepository implements AuthRepository {
     await Future<void>.delayed(const Duration(milliseconds: 500));
 
     final session = SessionUser(
-      id: '1',
+      id: 1,
       username: username,
       displayName: 'Operations Lead',
       permissions: const [
@@ -44,7 +44,7 @@ class MockAuthRepository implements AuthRepository {
     }
 
     return SessionUser(
-      id: '1',
+      id: 1,
       username: 'demo',
       displayName: 'Operations Lead',
       permissions: const [

@@ -1,15 +1,8 @@
-sealed class Result<T> {
-  const Result();
-}
+class Result<T> {
+  final T? data;
+  final String? error;
+  final bool isSuccess;
 
-class Success<T> extends Result<T> {
-  const Success(this.data);
-
-  final T data;
-}
-
-class Error<T> extends Result<T> {
-  const Error(this.message);
-
-  final String message;
+  Result.success(this.data) : error = null, isSuccess = true;
+  Result.failure(this.error) : data = null, isSuccess = false;
 }

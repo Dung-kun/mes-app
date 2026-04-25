@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:template_catra_mobile/app/app.dart';
 
 Future<void> main() async {
-  await dotenv.load();
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: '.env');
   runApp(const ProviderScope(child: TemplateCatraApp()));
 }

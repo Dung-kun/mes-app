@@ -1,5 +1,6 @@
-import '../entities/lot.dart';
-import '../repositories/lot_repository.dart';
+import 'package:template_catra_mobile/core/utils/result.dart';
+import 'package:template_catra_mobile/features/lot/domain/entities/lot.dart';
+import 'package:template_catra_mobile/features/lot/domain/repositories/lot_repository.dart';
 
 class UpdateLotParams {
   final int id;

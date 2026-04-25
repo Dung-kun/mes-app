@@ -17,9 +17,10 @@ class AppShell extends ConsumerStatefulWidget {
 
 class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMixin {
   late TabController _parentTabController;
-  late TabController _childTabController;
   int _selectedParentIndex = 0;
   final Map<int, int> _childIndexByParent = {};
+
+  late List<TabController> _childControllers;
 
   @override
   void initState() {
@@ -28,13 +29,14 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
       length: MenuItem.parentMenus.length,
       vsync: this,
     );
-    
-    // Initialize child tab controller with first parent's children
-    final firstParentChildren = MenuItem.parentMenus.first.children;
-    _childTabController = TabController(
-      length: firstParentChildren.length,
-      vsync: this,
-    );
+
+    // ✅ Tạo sẵn tất cả child controllers
+    _childControllers = MenuItem.parentMenus.map((menu) {
+      return TabController(
+        length: menu.children.length,
+        vsync: this,
+      );
+    }).toList();
 
     _parentTabController.addListener(_handleParentTabChange);
   }
@@ -43,43 +45,32 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
   void dispose() {
     _parentTabController.removeListener(_handleParentTabChange);
     _parentTabController.dispose();
-    _childTabController.dispose();
+    for (final controller in _childControllers) {
+      controller.dispose(); // ✅ dispose hết 1 lần
+    }
     super.dispose();
   }
 
   void _handleParentTabChange() {
-    if (_parentTabController.indexIsChanging) {
-      final newIndex = _parentTabController.index;
-      setState(() {
-        _selectedParentIndex = newIndex;
-      });
-      
-      // Update child tab controller
-      _childTabController.dispose();
-      final savedChildIndex = _childIndexByParent[newIndex] ?? 0;
+    final newIndex = _parentTabController.index;
+    if (newIndex == _selectedParentIndex) return;
+    setState(() => _selectedParentIndex = newIndex);
 
-      final newChildren = MenuItem.parentMenus[newIndex].children;
-      _childTabController = TabController(
-        length: newChildren.length,
-        vsync: this,
-        initialIndex: savedChildIndex.clamp(0, newChildren.length - 1),
-      );
-      
-      // Navigate to the first child of the new parent
-      if (newChildren.isNotEmpty) {
-        final parentTitle = MenuScreenMapping.parentTitles[newIndex];
-        final childRoutes = MenuScreenMapping.getRoutesForParent(parentTitle);
-        if (childRoutes.isNotEmpty) {
-          final routeIndex = savedChildIndex.clamp(0, childRoutes.length - 1);
-          context.go(childRoutes[routeIndex]);
-        }
-      }
+    // ✅ Không tạo/dispose gì cả, chỉ navigate
+    final parentTitle = MenuScreenMapping.parentTitles[newIndex];
+    final childRoutes = MenuScreenMapping.getRoutesForParent(parentTitle);
+    final savedIndex = (_childIndexByParent[newIndex] ?? 0)
+        .clamp(0, childRoutes.length - 1);
+
+    if (childRoutes.isNotEmpty) {
+      context.go(childRoutes[savedIndex]);
     }
   }
 
   void _handleChildTabChange(int index) {
     _childIndexByParent[_selectedParentIndex] = index;
-    // Navigate to the selected child screen
+    _childControllers[_selectedParentIndex].animateTo(index);
+
     final parentTitle = MenuScreenMapping.parentTitles[_selectedParentIndex];
     final childRoutes = MenuScreenMapping.getRoutesForParent(parentTitle);
     if (index < childRoutes.length) {
@@ -137,7 +128,7 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
       bottomNavigationBar: Container(
         color: Theme.of(context).colorScheme.surface,
         child: TabBar(
-          controller: _childTabController,
+          controller: _childControllers[_selectedParentIndex],
           isScrollable: true,
           tabAlignment: TabAlignment.center,
           onTap: _handleChildTabChange,

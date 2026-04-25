@@ -1,5 +1,7 @@
-import '../entities/lot.dart';
-import '../repositories/lot_repository.dart';
+import 'package:template_catra_mobile/core/models/paginated_result.dart';
+import 'package:template_catra_mobile/core/utils/result.dart';
+import 'package:template_catra_mobile/features/lot/domain/entities/lot.dart';
+import 'package:template_catra_mobile/features/lot/domain/repositories/lot_repository.dart';
 
 class GetLotsParams {
   final int page;
@@ -18,7 +20,7 @@ class GetLotsUseCase {
 
   GetLotsUseCase({required this.repository});
 
-  Future<Result<List<Lot>>> call(GetLotsParams params) async {
+  Future<Result<PaginatedResult<Lot>>> call(GetLotsParams params) async {
     return await repository.getLots(
       page: params.page,
       pageSize: params.pageSize,

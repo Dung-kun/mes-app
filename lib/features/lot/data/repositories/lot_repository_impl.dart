@@ -1,7 +1,10 @@
+import 'package:flutter/material.dart';
+import 'package:template_catra_mobile/core/models/import_result.dart';
+import 'package:template_catra_mobile/core/models/paginated_result.dart';
+import 'package:template_catra_mobile/core/utils/result.dart';
 import 'package:template_catra_mobile/features/lot/domain/entities/lot.dart';
 import 'package:template_catra_mobile/features/lot/domain/repositories/lot_repository.dart';
 import 'package:template_catra_mobile/features/lot/data/datasources/lot_remote_datasource.dart';
-import 'package:template_catra_mobile/features/lot/data/models/lot_model.dart';
 
 class LotRepositoryImpl implements LotRepository {
   final LotRemoteDataSource remoteDataSource;
@@ -9,7 +12,7 @@ class LotRepositoryImpl implements LotRepository {
   LotRepositoryImpl({required this.remoteDataSource});
 
   @override
-  Future<Result<List<Lot>>> getLots({
+  Future<Result<PaginatedResult<Lot>>> getLots({
     int page = 1,
     int pageSize = 10,
     String? search,
@@ -21,7 +24,7 @@ class LotRepositoryImpl implements LotRepository {
     );
 
     if (result.isSuccess && result.data != null) {
-      final lots = result.data!.map((model) => model.toDomain()).toList();
+      final PaginatedResult<Lot> lots = result.data!.toDomain((model) => model.toDomain());
       return Result.success(lots);
     } else {
       return Result.failure(result.error ?? 'Unknown error');
@@ -32,12 +35,10 @@ class LotRepositoryImpl implements LotRepository {
   Future<Result<Lot>> createLot({
     required String code,
     required String description,
-    required String createdBy,
   }) async {
     final result = await remoteDataSource.createLot(
       code: code,
       description: description,
-      createdBy: createdBy,
     );
 
     if (result.isSuccess && result.data != null) {
@@ -74,7 +75,7 @@ class LotRepositoryImpl implements LotRepository {
   }
 
   @override
-  Future<Result<List<Lot>>> importLots({
+  Future<Result<ImportResult>> importLots({
     required String filePath,
     bool replace = false,
   }) async {
@@ -84,8 +85,7 @@ class LotRepositoryImpl implements LotRepository {
     );
 
     if (result.isSuccess && result.data != null) {
-      final lots = result.data!.map((model) => model.toDomain()).toList();
-      return Result.success(lots);
+      return Result.success(result.data!);
     } else {
       return Result.failure(result.error ?? 'Unknown error');
     }
@@ -95,4 +95,6 @@ class LotRepositoryImpl implements LotRepository {
   Future<Result<void>> downloadTemplate() async {
     return await remoteDataSource.downloadTemplate();
   }
+
+  
 }

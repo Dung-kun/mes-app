@@ -1,21 +1,22 @@
+import 'package:flutter/material.dart';
 import 'package:template_catra_mobile/core/storage/token_storage.dart';
 import 'package:template_catra_mobile/features/auth/data/datasources/auth_remote_datasource.dart';
 import 'package:template_catra_mobile/features/auth/domain/entities/session_user.dart';
 import 'package:template_catra_mobile/features/auth/domain/repositories/auth_repository.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
-  AuthRepositoryImpl(this._tokenStorage, this._authRemoteDataSource);
+  AuthRepositoryImpl(this._tokenStorage, this._authDataSource);
 
   final TokenStorage _tokenStorage;
-  final AuthDataSource _authRemoteDataSource;
+  final AuthDataSource _authDataSource;
 
   @override
   Future<SessionUser> login({
     required String username,
     required String password,
   }) async {
-    final result = await _authRemoteDataSource.login(username: username, password: password);
-    if (result.isSuccess) {
+    final result = await _authDataSource.login(username: username, password: password);
+    if (!result.isSuccess) {
       throw result.error!;
     }
     final user = result.data!;
@@ -24,7 +25,10 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<void> logout() => _tokenStorage.clear();
+  Future<void> logout() async {
+    await _authDataSource.logout();
+    await _tokenStorage.clear();
+  }
 
   @override
   Future<SessionUser?> restoreSession() async {
@@ -32,19 +36,13 @@ class AuthRepositoryImpl implements AuthRepository {
     if (token == null || token.isEmpty) {
       return null;
     }
-
-    return SessionUser(
-      id: '1',
-      username: 'demo',
-      displayName: 'Operations Lead',
-      permissions: const [
-        'xem-bo-phan',
-        'xem-nhan-vien',
-        'xem-san-pham',
-        'xem-nguoi-dung',
-      ],
-      token: token,
-      status: 'active',
-    );
+    try {
+      final user = await _authDataSource.userInfo(token);
+      final sessionUser = user.data?.toDomain();
+      return sessionUser?.copyWith(token: token);
+    } catch (e) {
+      await _tokenStorage.clear();
+      return null;
+    }
   }
 }

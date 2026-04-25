@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:file_picker/file_picker.dart';
 import '../providers/lot_provider.dart';
 
 class ImportLotSection extends ConsumerStatefulWidget {
@@ -14,29 +15,58 @@ class _ImportLotSectionState extends ConsumerState<ImportLotSection> {
   bool _replaceData = false;
 
   Future<void> _pickFile() async {
-    // Simplified file picker - in real app, use file_picker package
-    // For now, just simulate file selection
     try {
-      // Simulate file selection
-      await Future.delayed(const Duration(milliseconds: 500));
-      
-      setState(() {
-        _selectedFilePath = '/path/to/selected/file.xlsx';
-      });
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Da chon têp Excel (gi lâp)'),
-            backgroundColor: Colors.blue,
-          ),
-        );
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['xlsx', 'xls'],
+        allowMultiple: false,
+      );
+
+      if (result != null && result.files.single.path != null) {
+        final file = result.files.single;
+        final fileName = file.name.toLowerCase();
+        
+        // Validate file extension
+        if (!fileName.endsWith('.xlsx') && !fileName.endsWith('.xls')) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Vui lòng chọn tệp Excel (.xlsx hoặc .xls)'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
+        }
+
+        setState(() {
+          _selectedFilePath = file.path;
+        });
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Đã chọn tệp: ${file.name}'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        // User cancelled the picker
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Đã hủy chọn tệp'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lôix khi chon têp: $e'),
+            content: Text('Lỗi khi chọn tệp: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -49,7 +79,7 @@ class _ImportLotSectionState extends ConsumerState<ImportLotSection> {
       // In a real app, implement actual download functionality
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Têp mâu dang ta xuông...'),
+          content: Text('Tệp mẫu đang tải xuống...'),
           backgroundColor: Colors.blue,
         ),
       );
@@ -57,7 +87,7 @@ class _ImportLotSectionState extends ConsumerState<ImportLotSection> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lôix khi ta xuông mâu: $e'),
+            content: Text('Lỗi khi tải xuống mẫu: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -85,7 +115,7 @@ class _ImportLotSectionState extends ConsumerState<ImportLotSection> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Nhâp d liu thành công!'),
+            content: Text('Nhập dữ liệu thành công!'),
             backgroundColor: Colors.green,
           ),
         );
@@ -99,7 +129,7 @@ class _ImportLotSectionState extends ConsumerState<ImportLotSection> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lôix khi nhâp têp: $e'),
+            content: Text('Lỗi khi nhập tệp: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -109,8 +139,73 @@ class _ImportLotSectionState extends ConsumerState<ImportLotSection> {
 
   @override
   Widget build(BuildContext context) {
-    final lotState = ref.watch(lotProvider);
+  final isImporting = ref.watch(lotProvider.select((s) => s.isImporting)); // ✅ select thay vì watch toàn bộ
+  ref.listen(
+    lotProvider.select((s) => s.importResult),
+    (previous, next) {
+      if (next == null) return;
 
+      if (next.success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.message),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.message),
+            backgroundColor: Colors.red,
+          ),
+        );
+
+        if (next.hasErrors) {
+          showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+              title: const Row(
+                children: [
+                  Icon(Icons.error_outline, color: Colors.red),
+                  SizedBox(width: 8),
+                  Text('Chi tiết lỗi import'),
+                ],
+              ),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: next.errors.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  itemBuilder: (_, index) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${index + 1}. ',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        Expanded(child: Text(next.errors[index])),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              actions: [
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Đóng'),
+                ),
+              ],
+            ),
+          );
+        }
+      }
+
+      ref.read(lotProvider.notifier).clearImportResult();
+    },
+  );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -121,8 +216,8 @@ class _ImportLotSectionState extends ConsumerState<ImportLotSection> {
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade300),
-              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey.shade200, width: 1),
+              borderRadius: BorderRadius.circular(12),
               color: Colors.grey.shade50,
             ),
             child: Column(
@@ -137,8 +232,8 @@ class _ImportLotSectionState extends ConsumerState<ImportLotSection> {
                     const SizedBox(width: 8),
                     Text(
                       _selectedFilePath != null
-                          ? 'Da chon: ${_selectedFilePath!.split('/').last}'
-                          : 'Chon têp Excel',
+                          ? 'Đã chọn: ${_selectedFilePath!.split('/').last}'
+                          : 'Chọn tệp Excel',
                       style: TextStyle(
                         color: _selectedFilePath != null
                             ? Colors.black87
@@ -154,7 +249,7 @@ class _ImportLotSectionState extends ConsumerState<ImportLotSection> {
                   const Padding(
                     padding: EdgeInsets.only(top: 8),
                     child: Text(
-                      'Hô trng các têp: .xlsx, .xls',
+                      'Chỉ hỗ trợ tệp Excel (.xlsx, .xls)',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey,
@@ -175,7 +270,7 @@ class _ImportLotSectionState extends ConsumerState<ImportLotSection> {
               child: OutlinedButton.icon(
                 onPressed: _downloadTemplate,
                 icon: const Icon(Icons.download),
-                label: const Text('XUÂT EXCEL'),
+                label: const Text('XUẤT EXCEL'),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
@@ -184,8 +279,8 @@ class _ImportLotSectionState extends ConsumerState<ImportLotSection> {
             const SizedBox(width: 12),
             Expanded(
               child: ElevatedButton.icon(
-                onPressed: (lotState.isImporting) ? null : _importFile,
-                icon: lotState.isImporting
+                onPressed: (isImporting) ? null : _importFile,
+                icon: isImporting
                     ? const SizedBox(
                         width: 16,
                         height: 16,
@@ -195,7 +290,7 @@ class _ImportLotSectionState extends ConsumerState<ImportLotSection> {
                         ),
                       )
                     : const Icon(Icons.upload_file),
-                label: Text(lotState.isImporting ? 'Dang nhâp...' : 'NHÂP TÊP'),
+                label: Text(isImporting ? 'Đang nhập...' : 'NHẬP TỆP'),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
@@ -218,14 +313,14 @@ class _ImportLotSectionState extends ConsumerState<ImportLotSection> {
               },
               activeColor: Theme.of(context).colorScheme.primary,
             ),
-            const Text('Thay th d liu hiên có'),
+            const Text('Thay thế dữ liệu hiện có'),
           ],
         ),
         
         const SizedBox(height: 8),
         
         Text(
-          'Nêu tích vào ô này, toàn b d liu hiên có s b thay th b i d liu m i t têp Excel.',
+          'Nếu tích vào ô này, toàn bộ dữ liệu hiện có sẽ được thay thế bằng dữ liệu mới từ tệp Excel.',
           style: TextStyle(
             fontSize: 12,
             color: Colors.grey.shade600,

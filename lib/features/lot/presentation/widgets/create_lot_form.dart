@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/lot_provider.dart';
+import 'package:template_catra_mobile/features/lot/presentation/providers/lot_provider.dart';
 
 class CreateLotForm extends ConsumerStatefulWidget {
   const CreateLotForm({super.key});
@@ -34,14 +34,13 @@ class _CreateLotFormState extends ConsumerState<CreateLotForm> {
     try {
       await ref.read(lotProvider.notifier).createLot(
         code: _codeController.text.trim(),
-        description: _descriptionController.text.trim(),
-        createdBy: 'current_user', // In real app, get from auth provider
+        description: _descriptionController.text.trim(), // In real app, get from auth provider
       );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Tao lô thành công!'),
+            content: Text('Tạo lô thành công!'),
             backgroundColor: Colors.green,
           ),
         );
@@ -54,8 +53,8 @@ class _CreateLotFormState extends ConsumerState<CreateLotForm> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lôix khi ta lô: $e'),
+          const SnackBar(
+            content: Text('Lỗi khi tạo lô'),
             backgroundColor: Colors.red,
           ),
         );
@@ -83,11 +82,31 @@ class _CreateLotFormState extends ConsumerState<CreateLotForm> {
             children: [
               TextFormField(
                 controller: _codeController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Mã lô',
-                  hintText: 'Nhâp mã lô',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.code),
+                  hintText: 'Nhập mã lô',
+                  border: InputBorder.none,
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Colors.grey.shade200,
+                      width: 1,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Colors.blue.shade300,
+                      width: 1.5,
+                    ),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
+                  prefixIcon: const Icon(Icons.code, color: Colors.grey),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
@@ -100,11 +119,31 @@ class _CreateLotFormState extends ConsumerState<CreateLotForm> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _descriptionController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Tên lô',
-                  hintText: 'Nhâp tên lô',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.description),
+                  hintText: 'Nhập tên lô',
+                  border: InputBorder.none,
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Colors.grey.shade200,
+                      width: 1,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Colors.blue.shade300,
+                      width: 1.5,
+                    ),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
+                  prefixIcon: const Icon(Icons.description, color: Colors.grey),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
@@ -113,7 +152,6 @@ class _CreateLotFormState extends ConsumerState<CreateLotForm> {
                   return null;
                 },
                 enabled: !_isSubmitting,
-                maxLines: 2,
               ),
               const SizedBox(height: 20),
               SizedBox(
@@ -138,7 +176,7 @@ class _CreateLotFormState extends ConsumerState<CreateLotForm> {
                               ),
                             ),
                             SizedBox(width: 12),
-                            Text('Dang ta...'),
+                            Text('Đang tạo...'),
                           ],
                         )
                       : const Text(

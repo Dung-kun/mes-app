@@ -1,10 +1,14 @@
 import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:template_catra_mobile/core/models/import_result.dart';
+import 'package:template_catra_mobile/core/models/paginated_result.dart';
+import 'package:template_catra_mobile/core/network/api_client.dart';
+import 'package:template_catra_mobile/core/utils/result.dart';
 import 'package:template_catra_mobile/features/lot/data/models/lot_model.dart';
-import 'package:template_catra_mobile/features/lot/domain/repositories/lot_repository.dart';
 
 
 abstract class LotRemoteDataSource {
-  Future<Result<List<LotModel>>> getLots({
+  Future<Result<PaginatedResult<LotModel>>> getLots({
     int page = 1,
     int pageSize = 10,
     String? search,
@@ -13,7 +17,6 @@ abstract class LotRemoteDataSource {
   Future<Result<LotModel>> createLot({
     required String code,
     required String description,
-    required String createdBy,
   });
 
   Future<Result<LotModel>> updateLot({
@@ -25,7 +28,7 @@ abstract class LotRemoteDataSource {
 
   Future<Result<void>> deleteLot(int id);
 
-  Future<Result<List<LotModel>>> importLots({
+  Future<Result<ImportResult>> importLots({
     required String filePath,
     bool replace = false,
   });
@@ -39,7 +42,7 @@ class LotRemoteDataSourceImpl implements LotRemoteDataSource {
   LotRemoteDataSourceImpl({required this.dio});
 
   @override
-  Future<Result<List<LotModel>>> getLots({
+  Future<Result<PaginatedResult<LotModel>>> getLots({
     int page = 1,
     int pageSize = 10,
     String? search,
@@ -47,19 +50,21 @@ class LotRemoteDataSourceImpl implements LotRemoteDataSource {
     try {
       final queryParams = <String, dynamic>{
         'page': page,
-        'page_size': pageSize,
+        'per_page': pageSize,
       };
       
       if (search != null && search.isNotEmpty) {
         queryParams['search'] = search;
       }
 
-      final response = await dio.get('/lot', queryParameters: queryParams);
+      final response = await dio.get('/lot/pagination', queryParameters: queryParams);
       
       if (response.statusCode == 200) {
-        final List<dynamic> data = response.data['data'] ?? [];
-        final lots = data.map((json) => LotModel.fromJson(json)).toList();
-        return Result.success(lots);
+        final PaginatedResult<LotModel> result = PaginatedResult<LotModel>.fromJson(
+          response.data!,
+          (json) => LotModel.fromJson(json),
+        );
+        return Result.success(result);
       } else {
         return Result.failure('Failed to fetch lots: ${response.statusCode}');
       }
@@ -72,19 +77,17 @@ class LotRemoteDataSourceImpl implements LotRemoteDataSource {
   Future<Result<LotModel>> createLot({
     required String code,
     required String description,
-    required String createdBy,
   }) async {
     try {
       final data = {
         'code': code,
         'description': description,
-        'created_by': createdBy,
       };
 
       final response = await dio.post('/lot', data: data);
       
       if (response.statusCode == 201) {
-        final lot = LotModel.fromJson(response.data['data']);
+        final lot = LotModel.fromJson(response.data);
         return Result.success(lot);
       } else {
         return Result.failure('Failed to create lot: ${response.statusCode}');
@@ -111,7 +114,7 @@ class LotRemoteDataSourceImpl implements LotRemoteDataSource {
       final response = await dio.patch('/lot/$id', data: data);
       
       if (response.statusCode == 200) {
-        final lot = LotModel.fromJson(response.data['data']);
+        final lot = LotModel.fromJson(response.data);
         return Result.success(lot);
       } else {
         return Result.failure('Failed to update lot: ${response.statusCode}');
@@ -137,22 +140,22 @@ class LotRemoteDataSourceImpl implements LotRemoteDataSource {
   }
 
   @override
-  Future<Result<List<LotModel>>> importLots({
+  Future<Result<ImportResult>> importLots({
     required String filePath,
     bool replace = false,
   }) async {
     try {
       final formData = FormData.fromMap({
         'file': await MultipartFile.fromFile(filePath),
-        'replace': replace,
+        'mode': replace ? 'replace' : 'import',
       });
 
       final response = await dio.post('/lot/import', data: formData);
       
       if (response.statusCode == 200) {
-        final List<dynamic> data = response.data['data'] ?? [];
-        final lots = data.map((json) => LotModel.fromJson(json)).toList();
-        return Result.success(lots);
+        final data = response.data ?? {};
+        final result = ImportResult.fromJson(data);
+        return Result.success(result);
       } else {
         return Result.failure('Failed to import lots: ${response.statusCode}');
       }
@@ -178,3 +181,8 @@ class LotRemoteDataSourceImpl implements LotRemoteDataSource {
     }
   }
 }
+
+
+final lotRemoteDataSourceProvider = Provider(
+  (ref) => LotRemoteDataSourceImpl(dio: ref.watch(dioProvider)),
+);

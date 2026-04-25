@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:template_catra_mobile/config/router/router_notifier.dart';
 import 'package:template_catra_mobile/features/auth/presentation/providers/auth_provider.dart';
 import 'package:template_catra_mobile/features/auth/presentation/screens/login_screen.dart';
 import 'package:template_catra_mobile/features/basic_data/presentation/screens/basket_screen.dart';
@@ -63,15 +64,15 @@ final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authControllerProvider);
+  final routerNotifier = RouterNotifier(ref);
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: authState.valueOrNull?.isAuthenticated == true
-        ? MaterialBatchCodeScreen.routePath
-        : LoginScreen.routePath,
+    refreshListenable: routerNotifier,
+    initialLocation: routerNotifier.isAuthenticated ? MaterialBatchCodeScreen.routePath : LoginScreen.routePath,
     redirect: (context, state) {
-      final isAuthenticated = authState.valueOrNull?.isAuthenticated ?? false;
+      if (routerNotifier.isLoading) return null;
+      final isAuthenticated = routerNotifier.isAuthenticated;
       final isLoggingIn = state.matchedLocation == LoginScreen.routePath;
 
       if (!isAuthenticated && !isLoggingIn) {

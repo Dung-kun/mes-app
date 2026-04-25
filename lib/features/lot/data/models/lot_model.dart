@@ -8,7 +8,7 @@ class LotModel {
   final String? editedBy;
   final DateTime createdAt;
   final DateTime updatedAt;
-  final int orderBy;
+  final int? orderBy;
 
   const LotModel({
     required this.id,
@@ -18,7 +18,7 @@ class LotModel {
     this.editedBy,
     required this.createdAt,
     required this.updatedAt,
-    required this.orderBy,
+    this.orderBy,
   });
 
   factory LotModel.fromJson(Map<String, dynamic> json) {
@@ -34,7 +34,7 @@ class LotModel {
       updatedAt: json['updated_at'] != null 
           ? DateTime.parse(json['updated_at']) 
           : DateTime.now(),
-      orderBy: json['order_by'] ?? 0,
+      orderBy: json['order_by'] != null ? int.tryParse(json['order_by'].toString()) : null,
     );
   }
 

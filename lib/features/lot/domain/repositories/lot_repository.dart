@@ -1,7 +1,11 @@
-import '../entities/lot.dart';
+import 'package:template_catra_mobile/core/models/import_result.dart';
+import 'package:template_catra_mobile/core/models/paginated_result.dart';
+import 'package:template_catra_mobile/core/utils/result.dart';
+
+import 'package:template_catra_mobile/features/lot/domain/entities/lot.dart';
 
 abstract class LotRepository {
-  Future<Result<List<Lot>>> getLots({
+  Future<Result<PaginatedResult<Lot>>> getLots({
     int page = 1,
     int pageSize = 10,
     String? search,
@@ -10,7 +14,6 @@ abstract class LotRepository {
   Future<Result<Lot>> createLot({
     required String code,
     required String description,
-    required String createdBy,
   });
 
   Future<Result<Lot>> updateLot({
@@ -22,7 +25,7 @@ abstract class LotRepository {
 
   Future<Result<void>> deleteLot(int id);
 
-  Future<Result<List<Lot>>> importLots({
+  Future<Result<ImportResult>> importLots({
     required String filePath,
     bool replace = false,
   });
@@ -30,11 +33,3 @@ abstract class LotRepository {
   Future<Result<void>> downloadTemplate();
 }
 
-class Result<T> {
-  final T? data;
-  final String? error;
-  final bool isSuccess;
-
-  Result.success(this.data) : error = null, isSuccess = true;
-  Result.failure(this.error) : data = null, isSuccess = false;
-}

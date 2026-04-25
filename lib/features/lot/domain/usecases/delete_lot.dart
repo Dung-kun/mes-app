@@ -1,4 +1,5 @@
-import '../repositories/lot_repository.dart';
+import 'package:template_catra_mobile/core/utils/result.dart';
+import 'package:template_catra_mobile/features/lot/domain/repositories/lot_repository.dart';
 
 class DeleteLotUseCase {
   final LotRepository repository;

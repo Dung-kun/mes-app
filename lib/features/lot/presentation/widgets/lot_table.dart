@@ -9,9 +9,13 @@ class LotTable extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final lotState = ref.watch(lotProvider);
+    final lots = ref.watch(lotProvider.select((s) => s.lots));
+    final isLoading = ref.watch(lotProvider.select((s) => s.isLoading));
+    final currentPage = ref.watch(lotProvider.select((s) => s.currentPage));
+    final pageSize = ref.watch(lotProvider.select((s) => s.pageSize));
+    final totalCount = ref.watch(lotProvider.select((s) => s.totalCount));
 
-    if (lotState.isLoading && lotState.lots.isEmpty) {
+    if (isLoading && lots.isEmpty) {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(32),
@@ -20,7 +24,7 @@ class LotTable extends ConsumerWidget {
       );
     }
 
-    if (lotState.lots.isEmpty && !lotState.isLoading) {
+    if (lots.isEmpty && !isLoading) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -32,7 +36,7 @@ class LotTable extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Chua có d liu lô',
+              'Chưa có dữ liệu lô',
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey.shade600,
@@ -41,7 +45,7 @@ class LotTable extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Vui lòng ta m i lô m i hoac nhâp t Excel.',
+              'Vui lòng tạo mới lô hoặc nhập từ Excel.',
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey.shade500,
@@ -81,7 +85,7 @@ class LotTable extends ConsumerWidget {
                 label: Text('Hành động'),
               ),
             ],
-            rows: lotState.lots.asMap().entries.map((entry) {
+            rows: lots.asMap().entries.map((entry) {
               final index = entry.key;
               final lot = entry.value;
               return LotTableRow(
@@ -104,24 +108,18 @@ class LotTable extends ConsumerWidget {
         ),
         
         // Pagination
-        if (lotState.lots.isNotEmpty)
+        if (lots.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 16),
             child: PaginationControls(
-              currentPage: lotState.currentPage,
-              pageSize: lotState.pageSize,
-              totalCount: lotState.totalCount,
-              onPageChanged: () {
-                ref.read(lotProvider.notifier).fetchLots();
+              currentPage: currentPage,
+              pageSize: pageSize,
+              totalCount: totalCount,
+              onPageChanged: (page) {
+                ref.read(lotProvider.notifier).fetchLots(page: page);
               },
               onPageSizeChanged: (size) {
                 ref.read(lotProvider.notifier).setPageSize(size);
-              },
-              onNextPage: () {
-                ref.read(lotProvider.notifier).nextPage();
-              },
-              onPreviousPage: () {
-                ref.read(lotProvider.notifier).previousPage();
               },
             ),
           ),
@@ -134,11 +132,11 @@ class LotTable extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Xác nhận xóa'),
-        content: const Text('Bn có chc mun xóa lô này không?'),
+        content: const Text('Bạn có chắc muốn xóa lô này không?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Hû'),
+            child: const Text('Hủy'),
           ),
           ElevatedButton(
             onPressed: () {

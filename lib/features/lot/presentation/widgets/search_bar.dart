@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/lot_provider.dart';
@@ -12,10 +14,13 @@ class LotSearchBar extends ConsumerStatefulWidget {
 class _LotSearchBarState extends ConsumerState<LotSearchBar> {
   final _searchController = TextEditingController();
   final _focusNode = FocusNode();
-
+  Timer? _debounce;
+  String _lastQuery = '';
+  
   @override
   void initState() {
     super.initState();
+    _searchController.text = ref.read(lotProvider).searchQuery;
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -28,17 +33,26 @@ class _LotSearchBarState extends ConsumerState<LotSearchBar> {
   }
 
   void _onSearchChanged() {
-    ref.read(lotProvider.notifier).setSearchQuery(_searchController.text);
+    setState(() {});
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      final query = _searchController.text.trim();
+      if (_lastQuery != query) {
+        _lastQuery = query;
+        ref.read(lotProvider.notifier).setSearchQuery(query);
+      }
+    });
   }
 
   void _clearSearch() {
     _searchController.clear();
+    _lastQuery = '';
     _focusNode.unfocus();
   }
 
   @override
   Widget build(BuildContext context) {
-    final lotState = ref.watch(lotProvider);
+    final totalCount = ref.watch(lotProvider.select((s) => s.totalCount));
 
     return Row(
       children: [
@@ -47,21 +61,35 @@ class _LotSearchBarState extends ConsumerState<LotSearchBar> {
             controller: _searchController,
             focusNode: _focusNode,
             decoration: InputDecoration(
-              hintText: 'Tìm kiêm theo mã lô, tên lô...',
-              prefixIcon: const Icon(Icons.search),
+              hintText: 'Tìm kiếm theo mã lô, tên lô...',
+              prefixIcon: const Icon(Icons.search, color: Colors.grey),
               suffixIcon: _searchController.text.isNotEmpty
                   ? IconButton(
                       onPressed: _clearSearch,
-                      icon: const Icon(Icons.clear),
-                      tooltip: 'Xóa tìm kiêm',
+                      icon: const Icon(Icons.clear, color: Colors.grey),
+                      tooltip: 'Xóa tìm kiếm',
                     )
                   : null,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+              border: InputBorder.none,
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: Colors.grey.shade200,
+                  width: 1,
+                ),
               ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: Colors.blue.shade300,
+                  width: 1.5,
+                ),
+              ),
+              filled: true,
+              fillColor: Colors.grey.shade50,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
-                vertical: 12,
+                vertical: 14,
               ),
             ),
           ),
@@ -84,7 +112,7 @@ class _LotSearchBarState extends ConsumerState<LotSearchBar> {
               ),
               const SizedBox(width: 4),
               Text(
-                '${lotState.totalCount}',
+                '$totalCount',
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onPrimaryContainer,
                   fontWeight: FontWeight.w500,
