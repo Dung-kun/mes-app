@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:template_catra_mobile/core/theme/app_colors.dart';
+import 'package:template_catra_mobile/core/theme/app_theme_helper.dart';
 import 'package:template_catra_mobile/features/home/domain/models/menu_screen_mapping.dart';
 
 class MainScreen extends ConsumerStatefulWidget {
@@ -78,18 +80,18 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                         Icon(
                           Icons.folder_open,
                           size: 64,
-                          color: Theme.of(context).colorScheme.primary,
+                          color: AppColors.primary,
                         ),
                         const SizedBox(height: 16),
                         Text(
                           route.split('/').last,
-                          style: Theme.of(context).textTheme.headlineSmall,
+                          style: AppThemeHelper.getHeadlineStyle(context),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 8),
                         Text(
                           'Content for $route',
-                          style: Theme.of(context).textTheme.bodyMedium,
+                          style: AppThemeHelper.getBodyStyle(context),
                           textAlign: TextAlign.center,
                         ),
                       ],

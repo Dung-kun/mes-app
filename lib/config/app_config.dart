@@ -25,19 +25,19 @@ class AppConfig {
   final bool enableNetworkLogs;
 
   static final baseConfig = AppConfig(
-    flavor: AppFlavor.mock,
+    flavor: AppFlavor.staging,
     appName: 'Template Catra Mobile',
     baseUrl:  apiUrl,
     enableNetworkLogs: true,
   );
   static final virtualConfig = AppConfig(
-    flavor: AppFlavor.mock,
+    flavor: AppFlavor.staging,
     appName: 'Template Catra Mobile',
     baseUrl: virtualUrl,
     enableNetworkLogs: true,
   );
   static final mockConfig = AppConfig(
-    flavor: AppFlavor.mock,
+    flavor: AppFlavor.staging,
     appName: 'Template Catra Mobile',
     baseUrl: mockUrl,
     enableNetworkLogs: true,

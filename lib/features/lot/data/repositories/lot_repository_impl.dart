@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:template_catra_mobile/core/models/import_result.dart';
 import 'package:template_catra_mobile/core/models/paginated_result.dart';
 import 'package:template_catra_mobile/core/utils/result.dart';
+import 'package:template_catra_mobile/features/lot/data/datasources/lot_remote_datasource.dart';
 import 'package:template_catra_mobile/features/lot/domain/entities/lot.dart';
 import 'package:template_catra_mobile/features/lot/domain/repositories/lot_repository.dart';
-import 'package:template_catra_mobile/features/lot/data/datasources/lot_remote_datasource.dart';
 
 class LotRepositoryImpl implements LotRepository {
   final LotRemoteDataSource remoteDataSource;
@@ -32,7 +32,7 @@ class LotRepositoryImpl implements LotRepository {
   }
 
   @override
-  Future<Result<Lot>> createLot({
+  Future<Result<void>> createLot({
     required String code,
     required String description,
   }) async {
@@ -41,32 +41,22 @@ class LotRepositoryImpl implements LotRepository {
       description: description,
     );
 
-    if (result.isSuccess && result.data != null) {
-      return Result.success(result.data!.toDomain());
-    } else {
-      return Result.failure(result.error ?? 'Unknown error');
-    }
+    return result;
   }
 
   @override
-  Future<Result<Lot>> updateLot({
+  Future<Result<void>> updateLot({
     required int id,
     String? code,
     String? description,
-    String? editedBy,
   }) async {
     final result = await remoteDataSource.updateLot(
       id: id,
       code: code,
       description: description,
-      editedBy: editedBy,
     );
 
-    if (result.isSuccess && result.data != null) {
-      return Result.success(result.data!.toDomain());
-    } else {
-      return Result.failure(result.error ?? 'Unknown error');
-    }
+    return result;
   }
 
   @override
@@ -76,11 +66,11 @@ class LotRepositoryImpl implements LotRepository {
 
   @override
   Future<Result<ImportResult>> importLots({
-    required String filePath,
+    required PlatformFile file,
     bool replace = false,
   }) async {
     final result = await remoteDataSource.importLots(
-      filePath: filePath,
+      file: file,
       replace: replace,
     );
 

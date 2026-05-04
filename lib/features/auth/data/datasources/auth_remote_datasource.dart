@@ -6,7 +6,8 @@ import 'package:template_catra_mobile/core/utils/result.dart';
 import 'package:template_catra_mobile/features/auth/data/models/user_model.dart';
 
 
-const loginEndpoint = '/login';
+const loginEndpoint = '/auth/login';
+const logoutEndpoint = '/auth/logout';
 const createUserEndpoint = '/user';
 const updateUserEndpoint = '/user';
 const deleteUserEndpoint = '/user';   
@@ -46,12 +47,12 @@ class AuthDataSourceImpl implements AuthDataSource {
     required String password,
   }) async {
     try {
-      final queryParams = <String, dynamic>{
+      final data = <String, dynamic>{
         'username': username,
         'password': password,
       };
 
-      final response = await dio.get(loginEndpoint, queryParameters: queryParams);
+      final response = await dio.post(loginEndpoint, data: data);
       
       if (response.statusCode == 200) {
         final data = response.data;
@@ -68,7 +69,7 @@ class AuthDataSourceImpl implements AuthDataSource {
   @override
   Future<Result<void>> logout() async {
     try {
-      final response = await dio.get('/logout');
+      final response = await dio.get(logoutEndpoint);
       
       if (response.statusCode == 200) {
         return Result.success(null);
@@ -83,10 +84,10 @@ class AuthDataSourceImpl implements AuthDataSource {
   @override
   Future<Result<UserModel>> userInfo(String token) async {
     try {
-      final response = await dio.get('/user');
+      final response = await dio.get('/user/info');
       
       if (response.statusCode == 200) {
-        final user = UserModel.fromJson(response.data['user']);
+        final user = UserModel.fromJson(response.data['data']);
         return Result.success(user);
       } else {
         return Result.failure('Failed to fetch user info: ${response.statusCode}');

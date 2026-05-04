@@ -15,9 +15,9 @@ class PaginatedResult<T> {
     Map<String, dynamic> json,
     T Function(Map<String, dynamic> json) fromJsonT,
   ) {
-    final original = json['original'] as Map<String, dynamic>;
-    final data = original['data'] as List<dynamic>;
-    final meta = original['meta'] as Map<String, dynamic>;
+    // final original = json['original'] as Map<String, dynamic>;
+    final data = json['data'] as List<dynamic>;
+    final meta = json['meta'] as Map<String, dynamic>;
 
     return PaginatedResult<T>(
       items: data

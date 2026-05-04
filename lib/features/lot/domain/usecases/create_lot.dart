@@ -1,7 +1,5 @@
 import 'package:template_catra_mobile/core/utils/result.dart';
-
-import '../entities/lot.dart';
-import '../repositories/lot_repository.dart';
+import 'package:template_catra_mobile/features/lot/domain/repositories/lot_repository.dart';
 
 class CreateLotParams {
   final String code;
@@ -18,7 +16,7 @@ class CreateLotUseCase {
 
   CreateLotUseCase({required this.repository});
 
-  Future<Result<Lot>> call(CreateLotParams params) async {
+  Future<Result<void>> call(CreateLotParams params) async {
     return await repository.createLot(
       code: params.code,
       description: params.description,

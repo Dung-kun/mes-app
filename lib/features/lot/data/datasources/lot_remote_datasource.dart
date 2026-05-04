@@ -1,4 +1,9 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:template_catra_mobile/core/models/import_result.dart';
 import 'package:template_catra_mobile/core/models/paginated_result.dart';
@@ -7,6 +12,8 @@ import 'package:template_catra_mobile/core/utils/result.dart';
 import 'package:template_catra_mobile/features/lot/data/models/lot_model.dart';
 
 
+
+const String lotAPI = '/lot';
 abstract class LotRemoteDataSource {
   Future<Result<PaginatedResult<LotModel>>> getLots({
     int page = 1,
@@ -14,12 +21,12 @@ abstract class LotRemoteDataSource {
     String? search,
   });
 
-  Future<Result<LotModel>> createLot({
+  Future<Result<void>> createLot({
     required String code,
     required String description,
   });
 
-  Future<Result<LotModel>> updateLot({
+  Future<Result<void>> updateLot({
     required int id,
     String? code,
     String? description,
@@ -29,7 +36,7 @@ abstract class LotRemoteDataSource {
   Future<Result<void>> deleteLot(int id);
 
   Future<Result<ImportResult>> importLots({
-    required String filePath,
+    required PlatformFile file,
     bool replace = false,
   });
 
@@ -57,7 +64,7 @@ class LotRemoteDataSourceImpl implements LotRemoteDataSource {
         queryParams['search'] = search;
       }
 
-      final response = await dio.get('/lot/pagination', queryParameters: queryParams);
+      final response = await dio.get('$lotAPI/paginated', queryParameters: queryParams);
       
       if (response.statusCode == 200) {
         final PaginatedResult<LotModel> result = PaginatedResult<LotModel>.fromJson(
@@ -74,7 +81,7 @@ class LotRemoteDataSourceImpl implements LotRemoteDataSource {
   }
 
   @override
-  Future<Result<LotModel>> createLot({
+  Future<Result<void>> createLot({
     required String code,
     required String description,
   }) async {
@@ -84,11 +91,11 @@ class LotRemoteDataSourceImpl implements LotRemoteDataSource {
         'description': description,
       };
 
-      final response = await dio.post('/lot', data: data);
+      final response = await dio.post(lotAPI, data: data);
       
+
       if (response.statusCode == 201) {
-        final lot = LotModel.fromJson(response.data);
-        return Result.success(lot);
+        return Result.success(null);
       } else {
         return Result.failure('Failed to create lot: ${response.statusCode}');
       }
@@ -98,7 +105,7 @@ class LotRemoteDataSourceImpl implements LotRemoteDataSource {
   }
 
   @override
-  Future<Result<LotModel>> updateLot({
+  Future<Result<void>> updateLot({
     required int id,
     String? code,
     String? description,
@@ -111,11 +118,10 @@ class LotRemoteDataSourceImpl implements LotRemoteDataSource {
       if (description != null) data['description'] = description;
       if (editedBy != null) data['edited_by'] = editedBy;
 
-      final response = await dio.patch('/lot/$id', data: data);
+      final response = await dio.patch('$lotAPI/$id', data: data);
       
       if (response.statusCode == 200) {
-        final lot = LotModel.fromJson(response.data);
-        return Result.success(lot);
+        return Result.success(null);
       } else {
         return Result.failure('Failed to update lot: ${response.statusCode}');
       }
@@ -127,7 +133,7 @@ class LotRemoteDataSourceImpl implements LotRemoteDataSource {
   @override
   Future<Result<void>> deleteLot(int id) async {
     try {
-      final response = await dio.delete('/lot/$id');
+      final response = await dio.delete('$lotAPI/$id');
       
       if (response.statusCode == 204) {
         return Result.success(null);
@@ -141,16 +147,16 @@ class LotRemoteDataSourceImpl implements LotRemoteDataSource {
 
   @override
   Future<Result<ImportResult>> importLots({
-    required String filePath,
+    required PlatformFile file,
     bool replace = false,
   }) async {
     try {
       final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(filePath),
+        'file': await MultipartFile.fromFile(file.path!),
         'mode': replace ? 'replace' : 'import',
       });
 
-      final response = await dio.post('/lot/import', data: formData);
+      final response = await dio.post('$lotAPI/import', data: formData);
       
       if (response.statusCode == 200) {
         final data = response.data ?? {};
@@ -167,18 +173,45 @@ class LotRemoteDataSourceImpl implements LotRemoteDataSource {
   @override
   Future<Result<void>> downloadTemplate() async {
     try {
-      final response = await dio.get('/lot/template');
-      
+      final response = await dio.get('$lotAPI/export',
+        options: Options(
+          responseType: ResponseType.bytes,
+          headers: {'Accept': '*/*'},
+      ));
       if (response.statusCode == 200) {
-        // In a real app, you would save the file to device storage
-        // For now, just return success
-        return Result.success(null);
-      } else {
-        return Result.failure('Failed to download template: ${response.statusCode}');
+        final headers = response.headers;
+        final disposition = headers.value('content-disposition');
+
+        String filename = 'export.xlsx'; 
+        if (disposition != null && disposition.contains('filename=')) {
+          filename = disposition
+              .split('filename=')
+              .last
+              .replaceAll('"', '')
+              .trim();
+
+            final savePath = await FilePicker.platform.saveFile(
+              dialogTitle: 'Lưu file Excel',
+              fileName: filename,
+              allowedExtensions: ['xlsx', 'xls'],
+              type: FileType.custom,
+              bytes: Uint8List.fromList(response.data), // ← truyền bytes vào luôn
+            );
+
+            if (savePath == null) Result.success(null); // user cancel
+
+            // 3. Một số platform cần tự ghi (Android/iOS)
+            final file = File(savePath!);
+            await file.writeAsBytes(response.data);
+           return Result.success(null);
+        } else {
+          return Result.failure('Failed to download template: ${response.statusCode}');
+        }
       }
     } catch (e) {
       return Result.failure('Error downloading template: $e');
     }
+    return Result.failure('Unknown error');
   }
 }
 

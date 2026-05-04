@@ -83,20 +83,50 @@ class _MaterialBatchCodeScreenState extends ConsumerState<MaterialBatchCodeScree
               
               const SizedBox(height: 24),
               
-              // SECTION 1: CREATE LOT FORM
-              const AppCard(
-                title: 'Thêm thủ công',
-                child: CreateLotForm(),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final isTablet = constraints.maxWidth >= 768;
+
+                  if (isTablet) {
+                    return const Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: Column(
+                            children: [
+                              AppCard(
+                                title: 'Thêm thủ công',
+                                child: CreateLotForm(),
+                              ),
+                              SizedBox(height: 24),
+                              AppCard(
+                                title: 'Nhập từ Excel',
+                                child: ImportLotSection(),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+                  } else {
+                  // SECTION 1: CREATE LOT FORM
+                    return const Column(
+                      children: [
+                        AppCard(
+                          title: 'Thêm thủ công',
+                          child: CreateLotForm(),
+                        ),
+                        SizedBox(height: 24),
+                        AppCard(
+                          title: 'Nhập từ Excel',
+                          child: ImportLotSection(),
+                        ),
+                      ],
+                    );
+                  }
+                },
               ),
-              
-              const SizedBox(height: 24),
-              
-              // SECTION 2: IMPORT EXCEL
-              const AppCard(
-                title: 'Nhập từ Excel',
-                child: ImportLotSection(),
-              ),
-              
               const SizedBox(height: 24),
               
               // SECTION 3: LOT LIST
