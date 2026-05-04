@@ -43,11 +43,13 @@ class PaginationControls extends StatelessWidget {
           top: BorderSide(color: Theme.of(context).dividerColor),
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Left side: Page info and size selector
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 '$startItem-$endItem của $totalCount',
@@ -59,9 +61,12 @@ class PaginationControls extends StatelessWidget {
               _buildCompactPageSizeDropdown(theme),
             ],
           ),
-          
+          const SizedBox(height: 8),
           // Right side: Navigation
+          // Thành này
           Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _buildNavButton(
                 icon: Icons.keyboard_arrow_left,
@@ -71,10 +76,21 @@ class PaginationControls extends StatelessWidget {
               
               const SizedBox(width: 4),
               
-              ..._buildCompactPageButtons(
-                currentPage: safeCurrentPage,
-                totalPages: totalPages,
-                theme: theme,
+              Flexible(
+                child: Center(  
+                  child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: _buildCompactPageButtons(
+                      currentPage: safeCurrentPage,
+                      totalPages: totalPages,
+                      theme: theme,
+                    ),
+                  ),
+                ),
+                ),
               ),
               
               const SizedBox(width: 4),
@@ -213,35 +229,30 @@ class PaginationControls extends StatelessWidget {
   }
 
   /// -1 = ellipsis
-  List<int> _generatePages(int currentPage, int totalPages) {
-    if (totalPages <= 7) {
-      return List.generate(totalPages, (i) => i + 1);
+  List<dynamic> _generatePages(int currentPage, int totalPages) {
+    const range = 2;
+    final start = (currentPage - range).clamp(1, totalPages);
+    final end = (currentPage + range).clamp(1, totalPages);
+    final List<dynamic> pages = [];
+
+    // Trang đầu
+    if (start > 1) {
+      pages.add(1);
+      if (start > 2) pages.add(-1); // ellipsis
     }
 
-    if (currentPage <= 4) {
-      return [1, 2, 3, 4, 5, -1, totalPages];
+    // Trang giữa
+    for (int i = start; i <= end; i++) {
+      pages.add(i);
     }
 
-    if (currentPage >= totalPages - 3) {
-      return [
-        1,
-        -1,
-        totalPages - 4,
-        totalPages - 3,
-        totalPages - 2,
-        totalPages - 1,
-        totalPages,
-      ];
+    // Trang cuối
+    if (end < totalPages) {
+      if (end < totalPages - 1) pages.add(-1); // ellipsis
+      pages.add(totalPages);
     }
 
-    return [
-      1,
-      -1,
-      currentPage - 1,
-      currentPage,
-      currentPage + 1,
-      -1,
-      totalPages,
-    ];
+    return pages;
   }
+
 }

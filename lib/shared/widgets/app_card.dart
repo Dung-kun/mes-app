@@ -29,17 +29,17 @@ class AppCard extends StatelessWidget {
     final theme = Theme.of(context);
     
     return Container(
-      margin: margin ?? const EdgeInsets.all(16),
+      margin: margin ?? const EdgeInsets.fromLTRB(1, 3, 1, 3),
       decoration: BoxDecoration(
         color: backgroundColor ?? theme.colorScheme.surface,
         borderRadius: borderRadius ?? BorderRadius.circular(12),
         border: showBorder ? Border.all(
-          color: theme.colorScheme.outline.withOpacity(0.2),
+          color: theme.colorScheme.outline.withValues(alpha: 0.2),
           width: 1,
         ) : null,
         boxShadow: [
           BoxShadow(
-            color: theme.shadowColor.withOpacity(0.1),
+            color: theme.shadowColor.withValues(alpha: 0.1),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -50,16 +50,16 @@ class AppCard extends StatelessWidget {
         children: [
           if (title != null || actions != null)
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer.withOpacity(0.3),
+                color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.only(
                   topLeft: borderRadius != null ? borderRadius!.topLeft : const Radius.circular(12),
                   topRight: borderRadius != null ? borderRadius!.topRight : const Radius.circular(12),
                 ),
                 border: showBorder ? Border(
                   bottom: BorderSide(
-                    color: theme.colorScheme.outline.withOpacity(0.2),
+                    color: theme.colorScheme.outline.withValues(alpha: 0.2),
                     width: 1,
                   ),
                 ) : null,
@@ -80,7 +80,7 @@ class AppCard extends StatelessWidget {
               ),
             ),
           Padding(
-            padding: padding ?? const EdgeInsets.all(16),
+            padding: padding ?? const EdgeInsets.all(10),
             child: child,
           ),
         ],

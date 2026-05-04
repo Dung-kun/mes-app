@@ -1,13 +1,14 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:template_catra_mobile/core/models/import_result.dart';
 import 'package:template_catra_mobile/core/utils/result.dart';
 import 'package:template_catra_mobile/features/lot/domain/repositories/lot_repository.dart';
 
 class ImportLotsParams {
-  final String filePath;
+  final PlatformFile file;
   final bool replace;
 
   ImportLotsParams({
-    required this.filePath,
+    required this.file,
     this.replace = false,
   });
 }
@@ -19,7 +20,7 @@ class ImportLotsUseCase {
 
   Future<Result<ImportResult>> call(ImportLotsParams params) async {
     return await repository.importLots(
-      filePath: params.filePath,
+      file: params.file,
       replace: params.replace,
     );
   }

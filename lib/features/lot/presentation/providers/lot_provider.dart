@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:template_catra_mobile/core/models/import_result.dart';
 import 'package:template_catra_mobile/core/models/paginated_result.dart';
 import 'package:template_catra_mobile/core/utils/result.dart';
@@ -11,6 +12,7 @@ import 'package:template_catra_mobile/features/lot/domain/usecases/create_lot.da
 import 'package:template_catra_mobile/features/lot/domain/usecases/update_lot.dart';
 import 'package:template_catra_mobile/features/lot/domain/usecases/delete_lot.dart';
 import 'package:template_catra_mobile/features/lot/domain/usecases/import_lots.dart';
+import 'package:template_catra_mobile/features/lot/domain/usecases/download_template.dart';
 
 class LotState {
   final List<Lot> lots;
@@ -80,6 +82,7 @@ class LotNotifier extends StateNotifier<LotState> {
   final UpdateLotUseCase _updateLotUseCase;
   final DeleteLotUseCase _deleteLotUseCase;
   final ImportLotsUseCase _importLotsUseCase;
+  final DownloadTemplateUseCase _downloadTemplateUseCase;
 
   LotNotifier({
     required GetLotsUseCase getLotsUseCase,
@@ -87,11 +90,13 @@ class LotNotifier extends StateNotifier<LotState> {
     required UpdateLotUseCase updateLotUseCase,
     required DeleteLotUseCase deleteLotUseCase,
     required ImportLotsUseCase importLotsUseCase,
+    required DownloadTemplateUseCase downloadTemplateUseCase,
   })  : _getLotsUseCase = getLotsUseCase,
         _createLotUseCase = createLotUseCase,
         _updateLotUseCase = updateLotUseCase,
         _deleteLotUseCase = deleteLotUseCase,
         _importLotsUseCase = importLotsUseCase,
+        _downloadTemplateUseCase = downloadTemplateUseCase,
         super(const LotState());
 
   Future<void> fetchLots({int page = 0,  bool refresh = false}) async {
@@ -140,7 +145,7 @@ class LotNotifier extends StateNotifier<LotState> {
       description: description,
     ));
 
-    if (result.isSuccess && result.data != null) {
+    if (result.isSuccess) {
       // Refresh the list
       await fetchLots(refresh: true);
     } else {
@@ -155,7 +160,6 @@ class LotNotifier extends StateNotifier<LotState> {
     required int id,
     String? code,
     String? description,
-    String? editedBy,
   }) async {
     state = state.copyWith(isUpdating: true, clearError: true);
 
@@ -163,10 +167,9 @@ class LotNotifier extends StateNotifier<LotState> {
       id: id,
       code: code,
       description: description,
-      editedBy: editedBy,
     ));
 
-    if (result.isSuccess && result.data != null) {
+    if (result.isSuccess) {
       // Refresh the list
       await fetchLots(refresh: true);
     } else {
@@ -194,17 +197,17 @@ class LotNotifier extends StateNotifier<LotState> {
   }
 
   Future<void> importLots({
-    required String filePath,
+    required PlatformFile file,
     bool replace = false,
   }) async {
     state = state.copyWith(isImporting: true, clearError: true);
 
     final result = await _importLotsUseCase.call(ImportLotsParams(
-      filePath: filePath,
+      file: file,
       replace: replace,
     ));
 
-    if (result.isSuccess && result.data?.success == true) {
+    if (result.isSuccess) {
       // Refresh the list
       await fetchLots(refresh: true);
     } else {
@@ -240,6 +243,15 @@ class LotNotifier extends StateNotifier<LotState> {
   void clearError() {
     state = state.copyWith(clearError: true);
   }
+
+  Future<void> downloadTemplate() async {
+    try {
+      await _downloadTemplateUseCase.call();
+    } catch (e) {
+      // Re-throw the error to be handled by the UI
+      rethrow;
+    }
+  }
 }
 
 // Providers
@@ -272,6 +284,10 @@ final importLotsUseCaseProvider = Provider<ImportLotsUseCase>((ref) {
   return ImportLotsUseCase(repository: repository);
 });
 
+final downloadTemplateUseCaseProvider = Provider<DownloadTemplateUseCase>((ref) {
+  final repository = ref.watch(lotRepositoryProvider);
+  return DownloadTemplateUseCase(repository: repository);
+});
 
 final lotProvider = StateNotifierProvider<LotNotifier, LotState>((ref) {
   return LotNotifier(
@@ -280,5 +296,6 @@ final lotProvider = StateNotifierProvider<LotNotifier, LotState>((ref) {
     updateLotUseCase: ref.watch(updateLotUseCaseProvider),
     deleteLotUseCase: ref.watch(deleteLotUseCaseProvider),
     importLotsUseCase: ref.watch(importLotsUseCaseProvider),
+    downloadTemplateUseCase: ref.watch(downloadTemplateUseCaseProvider),
   );
 });

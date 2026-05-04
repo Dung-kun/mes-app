@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:template_catra_mobile/core/theme/app_colors.dart';
 import 'package:template_catra_mobile/features/auth/presentation/providers/session_provider.dart';
+import 'package:template_catra_mobile/features/auth/presentation/providers/auth_provider.dart';
+import 'package:template_catra_mobile/features/auth/presentation/screens/login_screen.dart';
+import 'package:template_catra_mobile/features/basic_data/presentation/screens/user_screen.dart';
+import 'package:template_catra_mobile/features/basic_data/presentation/screens/permission_screen.dart';
 import 'package:template_catra_mobile/features/home/domain/models/menu_item.dart';
 import 'package:template_catra_mobile/features/home/domain/models/menu_screen_mapping.dart';
 import 'package:template_catra_mobile/features/profile/presentation/screens/profile_screen.dart';
@@ -78,6 +83,103 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
     }
   }
 
+  void _handleMenuSelection(String value) {
+    switch (value) {
+      case 'users':
+        _navigateWithTabSync(UserScreen.routePath, 'Dữ liệu cơ bản');
+        break;
+      case 'permissions':
+        _navigateWithTabSync(PermissionScreen.routePath, 'Dữ liệu cơ bản');
+        break;
+      case 'change_password':
+        _showChangePasswordDialog();
+        break;
+      case 'logout':
+        _handleLogout();
+        break;
+    }
+  }
+
+  void _navigateWithTabSync(String routePath, String parentTitle) {
+    // Find parent tab index
+    final parentIndex = MenuScreenMapping.parentTitles.indexOf(parentTitle);
+    if (parentIndex == -1) return;
+
+    // Find child tab index for the route
+    final childRoutes = MenuScreenMapping.getRoutesForParent(parentTitle);
+    final childIndex = childRoutes.indexOf(routePath);
+    if (childIndex == -1) return;
+
+    // Update parent tab
+    if (_selectedParentIndex != parentIndex) {
+      _parentTabController.animateTo(parentIndex);
+      setState(() => _selectedParentIndex = parentIndex);
+    }
+
+    // Update child tab
+    _childIndexByParent[parentIndex] = childIndex;
+    _childControllers[parentIndex].animateTo(childIndex);
+
+    // Navigate to the route
+    context.push(routePath);
+  }
+
+  void _showChangePasswordDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.lock_reset, color: AppColors.primary),
+            SizedBox(width: 8),
+            Text('Đổi mật khẩu'),
+          ],
+        ),
+        content: const Text('Tính năng đổi mật khẩu đang được phát triển.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Đóng'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handleLogout() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.logout, color: AppColors.error),
+            SizedBox(width: 8),
+            Text('Xác nhận đăng xuất'),
+          ],
+        ),
+        content: const Text('Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Close dialog
+              ref.read(authControllerProvider.notifier).logout(); // Logout
+              context.go(LoginScreen.routePath); // Navigate to login
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Đăng xuất'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final session = ref.watch(currentSessionProvider);
@@ -96,17 +198,66 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
           ],
         ),
         actions: [
-          IconButton(
-            onPressed: () => context.push(ProfileScreen.routePath),
-            icon: const Icon(Icons.account_circle_outlined),
-            tooltip: 'Profile',
+          PopupMenuButton<String>(
+            icon: const Icon(
+              Icons.account_circle_outlined,
+              color: AppColors.iconPrimary,
+            ),
+            tooltip: 'Tài khoản',
+            onSelected: (value) => _handleMenuSelection(value),
+            itemBuilder: (BuildContext context) => [
+              const PopupMenuItem<String>(
+                value: 'users',
+                child: Row(
+                  children: [
+                    Icon(Icons.people, color: AppColors.iconSecondary, size: 20),
+                    SizedBox(width: 12),
+                    Text('Danh sách tài khoản'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem<String>(
+                value: 'permissions',
+                child: Row(
+                  children: [
+                    Icon(Icons.admin_panel_settings, color: AppColors.iconSecondary, size: 20),
+                    SizedBox(width: 12),
+                    Text('Danh sách vai trò'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem<String>(
+                value: 'change_password',
+                child: Row(
+                  children: [
+                    Icon(Icons.lock_reset, color: AppColors.iconSecondary, size: 20),
+                    SizedBox(width: 12),
+                    Text('Đổi mật khẩu'),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem<String>(
+                value: 'logout',
+                child: Row(
+                  children: [
+                    Icon(Icons.logout, color: AppColors.iconError, size: 20),
+                    SizedBox(width: 12),
+                    Text('Đăng xuất', style: TextStyle(color: AppColors.textError)),
+                  ],
+                ),
+              ),
+            ],
           ),
           Padding(
             padding: const EdgeInsets.only(right: 16),
             child: Center(
               child: Text(
                 session?.username ?? '',
-                style: Theme.of(context).textTheme.labelMedium,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ),

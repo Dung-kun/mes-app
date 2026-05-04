@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:template_catra_mobile/core/theme/app_colors.dart';
 import 'package:template_catra_mobile/features/lot/domain/entities/lot.dart';
 import 'package:template_catra_mobile/features/lot/presentation/providers/lot_provider.dart';
+import 'package:template_catra_mobile/features/lot/presentation/widgets/edit_lot_dialog.dart';
 import 'package:template_catra_mobile/shared/pagination/pagination_controls.dart';
 
 class LotTable extends ConsumerWidget {
@@ -155,18 +157,24 @@ class LotTable extends ConsumerWidget {
   }
 
   void _editLot(BuildContext context, WidgetRef ref, Lot lot) {
-    // In a real app, show edit dialog or navigate to edit screen
+    // Show confirmation dialog first
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Chỉnh sửa lô'),
-        content: Text('Chỉnh sửa lô: ${lot.code}'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Đóng'),
-          ),
-        ],
+      builder: (context) => EditConfirmationDialog(
+        lot: lot,
+        onConfirm: () {
+          // Show edit dialog after confirmation
+          showDialog(
+            context: context,
+            builder: (context) => EditLotDialog(
+              lot: lot,
+              onSave: () {
+                // Refresh data after successful save
+                ref.read(lotProvider.notifier).fetchLots(refresh: true);
+              },
+            ),
+          );
+        },
       ),
     );
   }
