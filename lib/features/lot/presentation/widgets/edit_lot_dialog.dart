@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:template_catra_mobile/core/theme/app_colors.dart';
 import 'package:template_catra_mobile/core/theme/app_theme_helper.dart';
+import 'package:template_catra_mobile/config/locale/app_localizations_ext.dart';
 import 'package:template_catra_mobile/features/lot/domain/entities/lot.dart';
-import 'package:template_catra_mobile/features/lot/presentation/providers/lot_provider.dart';
 
 class EditLotDialog extends ConsumerStatefulWidget {
   final Lot lot;
-  final VoidCallback onSave;
+  final Future<bool?> Function(String code, String description) onSave; // ← Future<bool?>
 
   const EditLotDialog({
     super.key,
@@ -42,46 +42,28 @@ class _EditLotDialogState extends ConsumerState<EditLotDialog> {
   Future<void> _handleSave() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isSubmitting = true);
+    if (!_formKey.currentState!.validate()) return;
 
-    try {
-      // Call the save callback with updated data
-      await ref.read(lotProvider.notifier).updateLot(
-        id: widget.lot.id,
-        code: _codeController.text.trim(),
-        description: _descriptionController.text.trim(),
-      );
+  setState(() => _isSubmitting = true);
 
-      if (mounted) {
-        Navigator.of(context).pop();
-        widget.onSave();
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Cập nhật lô thành công!'),
-            backgroundColor: AppColors.success,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi khi cập nhật lô: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isSubmitting = false);
-      }
-    }
+  final confirmed = await widget.onSave(
+    _codeController.text.trim(),
+    _descriptionController.text.trim(),
+  );
+
+  if (mounted) {
+    setState(() => _isSubmitting = false);  // ← reset dù confirm hay không
+  }
+
+  if (confirmed == true && mounted) {
+    Navigator.of(context).pop();
+  }
   }
 
   @override
   Widget build(BuildContext context) {
     return Dialog(
+      clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
@@ -106,7 +88,7 @@ class _EditLotDialogState extends ConsumerState<EditLotDialog> {
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  'Chỉnh sửa thông tin lô',
+                  context.l10n.edit_material_batch,
                   style: AppThemeHelper.getHeadlineStyle(context).copyWith(
                     fontSize: 20,
                   ),
@@ -134,13 +116,14 @@ class _EditLotDialogState extends ConsumerState<EditLotDialog> {
                   TextFormField(
                     controller: _codeController,
                     decoration: AppThemeHelper.getInputDecoration(
-                      labelText: 'Mã lô',
-                      hintText: 'Nhập mã lô',
+                      labelText: context.l10n.material_batch_code,
+                      hintText: context.l10n.material_batch_code,
                       prefixIcon: const Icon(Icons.code, color: AppColors.iconSecondary),
                     ),
+                    style: const TextStyle(color: AppColors.textPrimary),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
-                        return 'Vui lòng nhập mã lô';
+                        return context.l10n.lot_code_required;
                       }
                       return null;
                     },
@@ -153,14 +136,14 @@ class _EditLotDialogState extends ConsumerState<EditLotDialog> {
                   TextFormField(
                     controller: _descriptionController,
                     decoration: AppThemeHelper.getInputDecoration(
-                      labelText: 'Tên lô',
-                      hintText: 'Nhập tên lô',
+                      labelText: context.l10n.material_batch_name,
+                      hintText: context.l10n.material_batch_name,
                       prefixIcon: const Icon(Icons.description, color: AppColors.iconSecondary),
                     ),
-                    maxLines: 3,
+                    style: const TextStyle(color: AppColors.textPrimary),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
-                        return 'Vui lòng nhập tên lô';
+                        return context.l10n.lot_description_required;
                       }
                       return null;
                     },
@@ -170,78 +153,7 @@ class _EditLotDialogState extends ConsumerState<EditLotDialog> {
                   const SizedBox(height: 24),
                   
                   // Current info display
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppColors.backgroundTertiary,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.borderLight),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Thông tin hiện tại',
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Mã lô:',
-                                    style: TextStyle(
-                                      color: AppColors.textTertiary,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  Text(
-                                    widget.lot.code,
-                                    style: const TextStyle(
-                                      color: AppColors.textPrimary,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Tên lô:',
-                                    style: TextStyle(
-                                      color: AppColors.textTertiary,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  Text(
-                                    widget.lot.description,
-                                    style: const TextStyle(
-                                      color: AppColors.textPrimary,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 24),
+                
                   
                   // Action buttons
                   Row(
@@ -250,9 +162,9 @@ class _EditLotDialogState extends ConsumerState<EditLotDialog> {
                         child: OutlinedButton(
                           onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
                           style: AppThemeHelper.getSecondaryButtonStyle(),
-                          child: const Text(
-                            'Hủy',
-                            style: TextStyle(color: AppColors.textSecondary),
+                          child: Text(
+                            context.l10n.cancel,
+                            style: const TextStyle(color: AppColors.textSecondary),
                           ),
                         ),
                       ),
@@ -262,24 +174,26 @@ class _EditLotDialogState extends ConsumerState<EditLotDialog> {
                           onPressed: _isSubmitting ? null : _handleSave,
                           style: AppThemeHelper.getPrimaryButtonStyle(),
                           child: _isSubmitting
-                              ? const Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(
-                                          AppColors.textOnPrimary,
+                              ?  Expanded(
+                                child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const SizedBox(
+                                        width: 10,
+                                        height: 10,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 1,
+                                          valueColor: AlwaysStoppedAnimation<Color>(
+                                            AppColors.textOnAccent,
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                    SizedBox(width: 8),
-                                    Text('Đang lưu...'),
-                                  ],
-                                )
-                              : const Text('Lưu thay đổi'),
+                                      const SizedBox(width: 8),
+                                      Text(context.l10n.saving),
+                                    ],
+                                  ),
+                              )
+                              : Text(context.l10n.save_changes),
                         ),
                       ),
                     ],
@@ -308,6 +222,7 @@ class EditConfirmationDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Dialog(
+      clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
@@ -339,7 +254,7 @@ class EditConfirmationDialog extends StatelessWidget {
             
             // Title
             Text(
-              'Xác nhận chỉnh sửa',
+              context.l10n.confirm_update_title,
               style: AppThemeHelper.getHeadlineStyle(context).copyWith(
                 fontSize: 18,
               ),
@@ -350,7 +265,7 @@ class EditConfirmationDialog extends StatelessWidget {
             
             // Message
             Text(
-              'Bạn có chắc chắn muốn chỉnh sửa thông tin của lô "${lot.code}"?',
+              '${context.l10n.confirm_update} "${lot.code}"?',
               style: AppThemeHelper.getBodyStyle(context),
               textAlign: TextAlign.center,
             ),
@@ -358,7 +273,7 @@ class EditConfirmationDialog extends StatelessWidget {
             const SizedBox(height: 8),
             
             Text(
-              'Thao tác này sẽ cập nhật thông tin lô trong hệ thống.',
+              context.l10n.confirm_update_system,
               style: AppThemeHelper.getCaptionStyle(context),
               textAlign: TextAlign.center,
             ),
@@ -370,23 +285,22 @@ class EditConfirmationDialog extends StatelessWidget {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () => Navigator.of(context).pop(false),
                     style: AppThemeHelper.getSecondaryButtonStyle(),
-                    child: const Text(
-                      'Hủy',
-                      style: TextStyle(color: AppColors.textSecondary),
+                    child: Text(
+                      context.l10n.cancel,
+                      style: const TextStyle(color: AppColors.textSecondary),
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () {
-                      Navigator.of(context).pop();
                       onConfirm();
                     },
                     style: AppThemeHelper.getPrimaryButtonStyle(),
-                    child: const Text('Tiếp tục'),
+                    child: Text(context.l10n.confirm),
                   ),
                 ),
               ],

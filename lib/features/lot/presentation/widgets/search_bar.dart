@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:template_catra_mobile/config/locale/app_localizations_ext.dart';
 import '../providers/lot_provider.dart';
 
 class LotSearchBar extends ConsumerStatefulWidget {
@@ -47,6 +48,7 @@ class _LotSearchBarState extends ConsumerState<LotSearchBar> {
   void _clearSearch() {
     _searchController.clear();
     _lastQuery = '';
+    ref.read(lotProvider.notifier).setSearchQuery('');
     _focusNode.unfocus();
   }
 
@@ -61,13 +63,12 @@ class _LotSearchBarState extends ConsumerState<LotSearchBar> {
             controller: _searchController,
             focusNode: _focusNode,
             decoration: InputDecoration(
-              hintText: 'Tìm kiếm theo mã lô, tên lô...',
+              hintText: '${context.l10n.search} ...',
               prefixIcon: const Icon(Icons.search, color: Colors.grey),
               suffixIcon: _searchController.text.isNotEmpty
                   ? IconButton(
                       onPressed: _clearSearch,
                       icon: const Icon(Icons.clear, color: Colors.grey),
-                      tooltip: 'Xóa tìm kiếm',
                     )
                   : null,
               border: InputBorder.none,

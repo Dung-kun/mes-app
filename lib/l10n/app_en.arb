@@ -969,5 +969,64 @@
     "error_operation_not_allowed": "Operation not allowed",
     "error_database": "Database error",
     "error_configuration": "System configuration error",
-    "error_unknown": "Unknown error"
+    "error_unknown": "Unknown error",
+    "no_internet": "No internet connection",
+    "@no_internet": {
+        "description": "Shown when device has no internet"
+    },
+
+    "timeout": "Connection timeout, please try again",
+    "@timeout": {
+        "description": "Shown when request times out"
+    },
+
+    "session_expired": "Session expired, please login again",
+    "@session_expired": {
+        "description": "Token expired or unauthorized"
+    },
+
+    "invalid_credentials": "Invalid username or password",
+    "@invalid_credentials": {
+        "description": "Login failed"
+    },
+
+    "no_permission": "You do not have permission to perform this action",
+    "@no_permission": {
+        "description": "Forbidden action"
+    },
+
+    "not_found": "Data not found",
+    "@not_found": {
+        "description": "Resource not found"
+    },
+
+    "already_exists": "Data already exists",
+    "@already_exists": {
+        "description": "Conflict data"
+    },
+
+    "existed_input": "Data already exists",
+    "@existed_input": {
+        "description": "Validation error"
+    },
+
+    "bad_request": "Invalid request",
+    "@bad_request": {
+        "description": "Bad request"
+    },
+
+    "server_error": "Server error, please try again later",
+    "@server_error": {
+        "description": "Internal server error"
+    },
+
+    "service_unavailable": "Service temporarily unavailable",
+    "@service_unavailable": {
+        "description": "Server down or maintenance"
+    },
+
+    "unknown_error": "Unknown error occurred",
+    "@unknown_error": {
+        "description": "Fallback error"
+    }
 }

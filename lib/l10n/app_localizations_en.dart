@@ -2731,4 +2731,41 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get error_unknown => 'Unknown error';
+
+  @override
+  String get no_internet => 'No internet connection';
+
+  @override
+  String get timeout => 'Connection timeout, please try again';
+
+  @override
+  String get session_expired => 'Session expired, please login again';
+
+  @override
+  String get invalid_credentials => 'Invalid username or password';
+
+  @override
+  String get no_permission =>
+      'You do not have permission to perform this action';
+
+  @override
+  String get not_found => 'Data not found';
+
+  @override
+  String get already_exists => 'Data already exists';
+
+  @override
+  String get existed_input => 'Data already exists';
+
+  @override
+  String get bad_request => 'Invalid request';
+
+  @override
+  String get server_error => 'Server error, please try again later';
+
+  @override
+  String get service_unavailable => 'Service temporarily unavailable';
+
+  @override
+  String get unknown_error => 'Unknown error occurred';
 }

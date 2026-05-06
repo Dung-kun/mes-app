@@ -2746,4 +2746,40 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get error_unknown => 'Lỗi không xác định';
+
+  @override
+  String get no_internet => 'Không có kết nối internet';
+
+  @override
+  String get timeout => 'Kết nối quá chậm, vui lòng thử lại';
+
+  @override
+  String get session_expired => 'Phiên đăng nhập đã hết hạn';
+
+  @override
+  String get invalid_credentials => 'Sai tài khoản hoặc mật khẩu';
+
+  @override
+  String get no_permission => 'Bạn không có quyền thực hiện thao tác này';
+
+  @override
+  String get not_found => 'Không tìm thấy dữ liệu';
+
+  @override
+  String get already_exists => 'Dữ liệu đã tồn tại';
+
+  @override
+  String get existed_input => 'Dữ liệu đã tồn tại';
+
+  @override
+  String get bad_request => 'Yêu cầu không hợp lệ';
+
+  @override
+  String get server_error => 'Lỗi hệ thống, vui lòng thử lại sau';
+
+  @override
+  String get service_unavailable => 'Máy chủ tạm thời không khả dụng';
+
+  @override
+  String get unknown_error => 'Đã xảy ra lỗi không xác định';
 }

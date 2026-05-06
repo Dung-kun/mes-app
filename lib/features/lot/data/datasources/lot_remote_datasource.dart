@@ -3,11 +3,11 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:template_catra_mobile/core/models/import_result.dart';
 import 'package:template_catra_mobile/core/models/paginated_result.dart';
 import 'package:template_catra_mobile/core/network/api_client.dart';
+import 'package:template_catra_mobile/core/utils/api_error_helper.dart';
 import 'package:template_catra_mobile/core/utils/result.dart';
 import 'package:template_catra_mobile/features/lot/data/models/lot_model.dart';
 
@@ -40,7 +40,7 @@ abstract class LotRemoteDataSource {
     bool replace = false,
   });
 
-  Future<Result<void>> downloadTemplate();
+  Future<Result<String>> downloadTemplate();
 }
 
 class LotRemoteDataSourceImpl implements LotRemoteDataSource {
@@ -93,14 +93,15 @@ class LotRemoteDataSourceImpl implements LotRemoteDataSource {
 
       final response = await dio.post(lotAPI, data: data);
       
-
       if (response.statusCode == 201) {
         return Result.success(null);
       } else {
         return Result.failure('Failed to create lot: ${response.statusCode}');
       }
+    } on DioException catch (e) {
+      return handleApiError(e);
     } catch (e) {
-      return Result.failure('Error creating lot: $e');
+      return Result.failure('Tạo lô thất bại: $e');
     }
   }
 
@@ -125,8 +126,10 @@ class LotRemoteDataSourceImpl implements LotRemoteDataSource {
       } else {
         return Result.failure('Failed to update lot: ${response.statusCode}');
       }
+    } on DioException catch (e) {
+      return handleApiError(e);
     } catch (e) {
-      return Result.failure('Error updating lot: $e');
+      return Result.failure('Cập nhật lô thất bại: $e');
     }
   }
 
@@ -135,13 +138,15 @@ class LotRemoteDataSourceImpl implements LotRemoteDataSource {
     try {
       final response = await dio.delete('$lotAPI/$id');
       
-      if (response.statusCode == 204) {
+      if (response.statusCode == 204 || response.statusCode == 200) {
         return Result.success(null);
       } else {
         return Result.failure('Failed to delete lot: ${response.statusCode}');
       }
+    } on DioException catch (e) {
+      return handleApiError(e);
     } catch (e) {
-      return Result.failure('Error deleting lot: $e');
+      return Result.failure('Xóa lô thất bại: $e');
     }
   }
 
@@ -165,13 +170,15 @@ class LotRemoteDataSourceImpl implements LotRemoteDataSource {
       } else {
         return Result.failure('Failed to import lots: ${response.statusCode}');
       }
+    } on DioException catch (e) {
+      return handleApiError(e);
     } catch (e) {
-      return Result.failure('Error importing lots: $e');
+      return Result.failure('Nhập lô thất bại: $e');
     }
   }
 
   @override
-  Future<Result<void>> downloadTemplate() async {
+  Future<Result<String>> downloadTemplate() async {
     try {
       final response = await dio.get('$lotAPI/export',
         options: Options(
@@ -203,11 +210,13 @@ class LotRemoteDataSourceImpl implements LotRemoteDataSource {
             // 3. Một số platform cần tự ghi (Android/iOS)
             final file = File(savePath!);
             await file.writeAsBytes(response.data);
-           return Result.success(null);
+           return Result.success(savePath);
         } else {
           return Result.failure('Failed to download template: ${response.statusCode}');
         }
       }
+    } on DioException catch (e) {
+      return handleApiError(e);
     } catch (e) {
       return Result.failure('Error downloading template: $e');
     }

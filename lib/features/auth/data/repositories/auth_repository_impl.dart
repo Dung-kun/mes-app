@@ -17,7 +17,7 @@ class AuthRepositoryImpl implements AuthRepository {
   }) async {
     final result = await _authDataSource.login(username: username, password: password);
     if (!result.isSuccess) {
-      throw result.error!;
+      throw result.errorType!;
     }
     final user = result.data!;
     await _tokenStorage.write(user.token!);

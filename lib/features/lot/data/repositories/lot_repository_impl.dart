@@ -13,7 +13,7 @@ class LotRepositoryImpl implements LotRepository {
 
   @override
   Future<Result<PaginatedResult<Lot>>> getLots({
-    int page = 1,
+    int page = 1, 
     int pageSize = 10,
     String? search,
   }) async {
@@ -82,7 +82,7 @@ class LotRepositoryImpl implements LotRepository {
   }
 
   @override
-  Future<Result<void>> downloadTemplate() async {
+  Future<Result<String>> downloadTemplate() async {
     return await remoteDataSource.downloadTemplate();
   }
 

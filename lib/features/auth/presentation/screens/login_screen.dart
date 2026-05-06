@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logger/logger.dart';
+import 'package:template_catra_mobile/config/locale/app_localizations_ext.dart';
 import 'package:template_catra_mobile/core/constants/app_spacing.dart';
 import 'package:template_catra_mobile/core/theme/app_colors.dart';
+import 'package:template_catra_mobile/core/utils/api_error_helper.dart';
 import 'package:template_catra_mobile/features/auth/presentation/providers/auth_provider.dart';
+import 'package:template_catra_mobile/shared/widgets/error_dialog.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -18,18 +22,38 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _usernameController = TextEditingController(text: '');
   final _passwordController = TextEditingController(text: '');
   final _formKey = GlobalKey<FormState>();
-
+  ErrorType? _lastError;
   @override
   void dispose() {
     _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
-
+  void _showErrorDialog(ErrorType errorType) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _lastError != errorType) {
+        if(_lastError != errorType){
+        _lastError = errorType;
+        ErrorDialog.show(
+          context: context,
+          message: mapErrorToMessage(errorType!, context.l10n),
+          title: 'Lỗi',
+          onDismiss: () {
+            ref.read(authControllerProvider.notifier).clearError();
+            _lastError = null;
+          },
+        );
+      }
+      }
+    });
+  }
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
-
+    if(authState.hasError){
+      final errorType = authState.error as ErrorType?;
+      _showErrorDialog(errorType!);
+    }
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -50,25 +74,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Operations in your pocket',
+                            context.l10n.sign_in,
                             style: Theme.of(context).textTheme.headlineMedium,
                           ),
                           const SizedBox(height: AppSpacing.sm),
                           Text(
-                            'Start with mock auth now. Real Laravel JWT wiring can drop in behind the same repository later.',
+                            context.l10n.sign_in_to_start_your_session,
                             style: Theme.of(context).textTheme.bodyMedium,
                           ),
                           const SizedBox(height: AppSpacing.lg),
                           TextFormField(
                             controller: _usernameController,
-                            decoration: const InputDecoration(labelText: 'Username'),
+                            decoration: InputDecoration(labelText: context.l10n.username),
                             validator: (value) =>
                                 value == null || value.isEmpty ? 'Username is required' : null,
                           ),
                           const SizedBox(height: AppSpacing.md),
                           TextFormField(
                             controller: _passwordController,
-                            decoration: const InputDecoration(labelText: 'Password'),
+                            decoration: InputDecoration(labelText: context.l10n.password),
                             obscureText: true,
                             validator: (value) =>
                                 value == null || value.isEmpty ? 'Password is required' : null,
@@ -95,16 +119,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                       height: 20,
                                       child: CircularProgressIndicator(strokeWidth: 2),
                                     )
-                                  : const Text('Sign in'),
+                                  : Text(context.l10n.sign_in),
                             ),
                           ),
-                          if (authState.hasError) ...[
-                            const SizedBox(height: AppSpacing.md),
-                            Text(
-                              authState.error.toString(),
-                              style: TextStyle(color: Theme.of(context).colorScheme.error),
-                            ),
-                          ],
                         ],
                       ),
                     ),

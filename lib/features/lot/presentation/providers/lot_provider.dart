@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:template_catra_mobile/core/models/import_result.dart';
 import 'package:template_catra_mobile/core/models/paginated_result.dart';
+import 'package:template_catra_mobile/core/utils/api_error_helper.dart';
 import 'package:template_catra_mobile/core/utils/result.dart';
 import 'package:template_catra_mobile/features/lot/data/datasources/lot_remote_datasource.dart';
 import 'package:template_catra_mobile/features/lot/data/repositories/lot_repository_impl.dart';
@@ -22,6 +23,7 @@ class LotState {
   final bool isDeleting;
   final bool isImporting;
   final String? error;
+  final ErrorType? errorType;
   final int currentPage;
   final int pageSize;
   final int totalCount;
@@ -36,6 +38,7 @@ class LotState {
     this.isDeleting = false,
     this.isImporting = false,
     this.error,
+    this.errorType,
     this.currentPage = 1,
     this.pageSize = 10,
     this.totalCount = 0,
@@ -51,6 +54,7 @@ class LotState {
     bool? isDeleting,
     bool? isImporting,
     String? error,
+    ErrorType? errorType,
     int? currentPage,
     int? pageSize,
     int? totalCount,
@@ -67,6 +71,7 @@ class LotState {
       isDeleting: isDeleting ?? this.isDeleting,
       isImporting: isImporting ?? this.isImporting,
       error: clearError ? null : (error ?? this.error),
+      errorType: clearError ? null : (errorType ?? this.errorType),
       currentPage: currentPage ?? this.currentPage,
       pageSize: pageSize ?? this.pageSize,
       totalCount: totalCount ?? this.totalCount,
@@ -126,6 +131,7 @@ class LotNotifier extends StateNotifier<LotState> {
       state = state.copyWith(
         isLoading: false,
         error: result.error ?? 'Failed to fetch lots',
+        errorType: result.errorType,
       );
     }
   }
@@ -134,7 +140,7 @@ class LotNotifier extends StateNotifier<LotState> {
     state = state.copyWith(clearImportResult: true);
   }
   
-  Future<void> createLot({
+  Future<bool> createLot({
     required String code,
     required String description,
   }) async {
@@ -147,16 +153,20 @@ class LotNotifier extends StateNotifier<LotState> {
 
     if (result.isSuccess) {
       // Refresh the list
-      await fetchLots(refresh: true);
+      state = state.copyWith(isCreating: false);
+      fetchLots(refresh: true);
+      return true;
     } else {
       state = state.copyWith(
         isCreating: false,
         error: result.error ?? 'Failed to create lot',
+        errorType: result.errorType,
       );
+      return false;
     }
   }
 
-  Future<void> updateLot({
+  Future<bool> updateLot({
     required int id,
     String? code,
     String? description,
@@ -171,32 +181,40 @@ class LotNotifier extends StateNotifier<LotState> {
 
     if (result.isSuccess) {
       // Refresh the list
-      await fetchLots(refresh: true);
+      state = state.copyWith(isUpdating: false);
+      fetchLots(refresh: true);
+      return true;
     } else {
       state = state.copyWith(
         isUpdating: false,
         error: result.error ?? 'Failed to update lot',
+        errorType: result.errorType,
       );
+      return false;
     }
   }
 
-  Future<void> deleteLot(int id) async {
+  Future<bool> deleteLot(int id) async {
     state = state.copyWith(isDeleting: true, clearError: true);
 
     final result = await _deleteLotUseCase.call(id);
 
     if (result.isSuccess) {
       // Refresh the list
+      state = state.copyWith(isDeleting: false);
       await fetchLots(refresh: true);
+      return true;
     } else {
       state = state.copyWith(
         isDeleting: false,
         error: result.error ?? 'Failed to delete lot',
+        errorType: result.errorType,
       );
+      return false;
     }
   }
 
-  Future<void> importLots({
+  Future<bool> importLots({
     required PlatformFile file,
     bool replace = false,
   }) async {
@@ -209,13 +227,20 @@ class LotNotifier extends StateNotifier<LotState> {
 
     if (result.isSuccess) {
       // Refresh the list
-      await fetchLots(refresh: true);
+      if(result.data?.hasErrors == true) {
+        state = state.copyWith(importResult: result.data);
+      }
+      state = state.copyWith(isImporting: false);
+      fetchLots(refresh: true);
     } else {
       state = state.copyWith(
         isImporting: false,
         error: result.error ?? 'Failed to import lots',
+        errorType: result.errorType,
       );
+      return false;
     }
+    return true;
   }
 
   void setSearchQuery(String query) {
@@ -244,9 +269,13 @@ class LotNotifier extends StateNotifier<LotState> {
     state = state.copyWith(clearError: true);
   }
 
-  Future<void> downloadTemplate() async {
+  Future<String> downloadTemplate() async {
     try {
-      await _downloadTemplateUseCase.call();
+      Result<String> result = await _downloadTemplateUseCase.call();
+      if (result.isSuccess) {
+        return result.data!;
+      } 
+      return '';
     } catch (e) {
       // Re-throw the error to be handled by the UI
       rethrow;

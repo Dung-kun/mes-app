@@ -267,6 +267,7 @@ class AppColors {
   static const Color tagSuccess = Color(0xFFE8F5E8);
   static const Color tagError = Color(0xFFFFEBEE);
   static const Color tagWarning = Color(0xFFFFF3E0);
+  static Color errorText = Colors.red[600]!;
 
   // ==================== UTILITY METHODS ====================
   

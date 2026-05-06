@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:template_catra_mobile/config/locale/app_localizations_ext.dart';
 import 'package:template_catra_mobile/core/theme/app_colors.dart';
 import 'package:template_catra_mobile/features/lot/domain/entities/lot.dart';
 import 'package:template_catra_mobile/features/lot/presentation/providers/lot_provider.dart';
@@ -20,8 +21,8 @@ class LotTable extends ConsumerWidget {
     if (isLoading && lots.isEmpty) {
       return const Center(
         child: Padding(
-          padding: EdgeInsets.all(32),
-          child: CircularProgressIndicator(),
+          padding: EdgeInsets.all(10),
+          child: CircularProgressIndicator(strokeWidth: 1),
         ),
       );
     }
@@ -38,7 +39,7 @@ class LotTable extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Chưa có dữ liệu lô',
+              context.l10n.no_data_available,
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey.shade600,
@@ -47,7 +48,7 @@ class LotTable extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Vui lòng tạo mới lô hoặc nhập từ Excel.',
+              context.l10n.lot_creation_failed,
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey.shade500,
@@ -66,31 +67,32 @@ class LotTable extends ConsumerWidget {
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: DataTable(
-            columns: const [
-              DataColumn(
+            columns: [
+              const DataColumn(
                 label: Text('STT'),
                 numeric: true,
               ),
               DataColumn(
-                label: Text('Mã lô'),
+                label: Text(context.l10n.material_batch_code),
               ),
               DataColumn(
-                label: Text('Tên lô'),
+                label: Text(context.l10n.material_batch_name),
               ),
               DataColumn(
-                label: Text('Người tạo'),
+                label: Text(context.l10n.created_by),
               ),
               DataColumn(
-                label: Text('Người sửa'),
+                label: Text(context.l10n.updated_by),
               ),
               DataColumn(
-                label: Text('Hành động'),
+                label: Text(context.l10n.actions),
               ),
             ],
             rows: lots.asMap().entries.map((entry) {
-              final index = entry.key;
+              final index = entry.key + (currentPage - 1) * pageSize;
               final lot = entry.value;
               return LotTableRow(
+                context: context,
                 lot: lot,
                 index: index + 1,
                 onDelete: () => _deleteLot(context, ref, lot.id),
@@ -133,23 +135,35 @@ class LotTable extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Xác nhận xóa'),
-        content: const Text('Bạn có chắc muốn xóa lô này không?'),
+        title: Text(context.l10n.confirm_deletion),
+        content: Text(context.l10n.are_you_sure_you_want_to_delete),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Hủy'),
+            child: Text(context.l10n.cancel),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.of(context).pop();
-              ref.read(lotProvider.notifier).deleteLot(id);
-            },
+              final result = await ref.read(lotProvider.notifier).deleteLot(id);
+              if (context.mounted) {
+                Navigator.of(context).pop();
+                
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: result 
+                      ? Text(context.l10n.lot_deleted_successfully)
+                      : Text(context.l10n.material_deletion_failed),
+                    backgroundColor: result ? AppColors.success : AppColors.error,
+                  ),
+                );
+              }
+            },    
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Xóa'),
+            child: Text(context.l10n.delete_group),
           ),
         ],
       ),
@@ -157,23 +171,38 @@ class LotTable extends ConsumerWidget {
   }
 
   void _editLot(BuildContext context, WidgetRef ref, Lot lot) {
-    // Show confirmation dialog first
     showDialog(
       context: context,
-      builder: (context) => EditConfirmationDialog(
+      builder: (editLotContext) => EditLotDialog(
         lot: lot,
-        onConfirm: () {
-          // Show edit dialog after confirmation
-          showDialog(
-            context: context,
-            builder: (context) => EditLotDialog(
+        onSave: (String code, String description) async {
+          final confirmed = await showDialog<bool>(
+            context: editLotContext,
+            builder: (confirmContext) => EditConfirmationDialog(
               lot: lot,
-              onSave: () {
-                // Refresh data after successful save
-                ref.read(lotProvider.notifier).fetchLots(refresh: true);
-              },
+              onConfirm: () => Navigator.of(confirmContext).pop(true),  // trả về true
+              // nút Hủy pop(false) hoặc pop() → null
             ),
           );
+          if (confirmed == true) {
+            final result = await ref.read(lotProvider.notifier).updateLot(
+              id: lot.id,
+              code: code,
+              description: description,
+            );
+            if (editLotContext.mounted) {
+              ScaffoldMessenger.of(editLotContext).showSnackBar(
+                SnackBar(
+                  content: result 
+                    ? Text(editLotContext.l10n.lot_updated_successfully)
+                    : Text(editLotContext.l10n.lot_update_failed),
+                  backgroundColor: result ? AppColors.success : AppColors.error,
+                ),
+              );
+            }
+          }
+          return confirmed;
+          // Show confirmation after filling in info
         },
       ),
     );
@@ -185,8 +214,10 @@ class LotTableRow extends DataRow {
   final int index;
   final VoidCallback onDelete;
   final VoidCallback onEdit;
+  final BuildContext context;
 
   LotTableRow({
+    required this.context,
     required this.lot,
     required this.index,
     required this.onDelete,
@@ -210,13 +241,13 @@ class LotTableRow extends DataRow {
                   IconButton(
                     onPressed: onEdit,
                     icon: const Icon(Icons.edit, size: 18),
-                    tooltip: 'Chỉnh sửa',
+                    tooltip: context.l10n.edit_group,
                     visualDensity: VisualDensity.compact,
                   ),
                   IconButton(
                     onPressed: onDelete,
                     icon: const Icon(Icons.delete, size: 18),
-                    tooltip: 'Xóa',
+                    tooltip: context.l10n.delete_group,
                     visualDensity: VisualDensity.compact,
                     color: Colors.red,
                   ),

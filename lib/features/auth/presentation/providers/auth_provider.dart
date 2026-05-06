@@ -23,7 +23,7 @@ class AuthController extends AsyncNotifier<SessionUser?> {
     required String username,
     required String password,
   }) async {
-    debugPrint('🔄 login() called');
+    ///debugPrint('🔄 login() called');
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(
@@ -32,11 +32,15 @@ class AuthController extends AsyncNotifier<SessionUser?> {
             password: password,
           ),
     );
-    debugPrint('✅ state after login: $state');
+    ///debugPrint('✅ state after login: $state');
   }
 
   Future<void> logout() async {
     await ref.read(authRepositoryProvider).logout();
+    state = const AsyncData(null);
+  }
+
+  clearError() {
     state = const AsyncData(null);
   }
 }

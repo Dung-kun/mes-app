@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:template_catra_mobile/core/network/api_client.dart';
+import 'package:template_catra_mobile/core/utils/api_error_helper.dart';
 import 'package:template_catra_mobile/core/utils/result.dart';
 import 'package:template_catra_mobile/features/auth/data/models/user_model.dart';
 
@@ -59,10 +60,10 @@ class AuthDataSourceImpl implements AuthDataSource {
         final user = UserModel.fromJson(data);
         return Result.success(user);
       } else {
-        return Result.failure('Failed to fetch lots: ${response.statusCode}');
+        return Result.failure('Failed to login: ${response.statusCode}', errorType: ErrorType.unknown);
       }
-    } catch (e) {
-      return Result.failure('Error fetching lots: $e');
+    } on DioException catch (e) {
+      return handleApiError(e, login: true);
     }
   }
 
@@ -76,8 +77,8 @@ class AuthDataSourceImpl implements AuthDataSource {
       } else {
         return Result.failure('Failed to logout: ${response.statusCode}');
       }
-    } catch (e) {
-      return Result.failure('Error logging out: $e');
+    } on DioException catch (e) {
+      return handleApiError(e);
     }
   }
 
@@ -92,8 +93,8 @@ class AuthDataSourceImpl implements AuthDataSource {
       } else {
         return Result.failure('Failed to fetch user info: ${response.statusCode}');
       }
-    } catch (e) {
-      return Result.failure('Error fetching user info: $e');
+    } on DioException catch (e) {
+      return handleApiError(e);
     }
   }
 
@@ -116,8 +117,8 @@ class AuthDataSourceImpl implements AuthDataSource {
       } else {
         return Result.failure('Failed to create user: ${response.statusCode}');
       }
-    } catch (e) {
-      return Result.failure('Error creating user: $e');
+    } on DioException catch (e) {
+      return handleApiError(e);
     }
   }
 
@@ -141,8 +142,8 @@ class AuthDataSourceImpl implements AuthDataSource {
       } else {
         return Result.failure('Failed to update user: ${response.statusCode}');
       }
-    } catch (e) {
-      return Result.failure('Error updating user: $e');
+    } on DioException catch (e) {
+      return handleApiError(e);
     }
   }
 
@@ -156,8 +157,8 @@ class AuthDataSourceImpl implements AuthDataSource {
       } else {
         return Result.failure('Failed to delete user: ${response.statusCode}');
       }
-    } catch (e) {
-      return Result.failure('Error deleting user: $e');
+    } on DioException catch (e) {
+      return handleApiError(e);
     }
   }
 }

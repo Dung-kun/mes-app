@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:template_catra_mobile/config/locale/app_localizations_ext.dart';
 import 'package:template_catra_mobile/core/theme/app_colors.dart';
 import 'package:template_catra_mobile/features/auth/presentation/providers/session_provider.dart';
 import 'package:template_catra_mobile/features/auth/presentation/providers/auth_provider.dart';
 import 'package:template_catra_mobile/features/auth/presentation/screens/login_screen.dart';
 import 'package:template_catra_mobile/features/basic_data/presentation/screens/user_screen.dart';
 import 'package:template_catra_mobile/features/basic_data/presentation/screens/permission_screen.dart';
-import 'package:template_catra_mobile/features/home/domain/models/menu_item.dart';
-import 'package:template_catra_mobile/features/home/domain/models/menu_screen_mapping.dart';
-import 'package:template_catra_mobile/features/profile/presentation/screens/profile_screen.dart';
+import 'package:template_catra_mobile/shared/navigation/models/menu_item.dart';
+
 
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key, required this.navigationShell});
@@ -61,14 +61,12 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
     if (newIndex == _selectedParentIndex) return;
     setState(() => _selectedParentIndex = newIndex);
 
-    // ✅ Không tạo/dispose gì cả, chỉ navigate
-    final parentTitle = MenuScreenMapping.parentTitles[newIndex];
-    final childRoutes = MenuScreenMapping.getRoutesForParent(parentTitle);
+    final children = MenuItem.parentMenus[newIndex].children;  // 👈
     final savedIndex = (_childIndexByParent[newIndex] ?? 0)
-        .clamp(0, childRoutes.length - 1);
+        .clamp(0, children.length - 1);
 
-    if (childRoutes.isNotEmpty) {
-      context.go(childRoutes[savedIndex]);
+    if (children.isNotEmpty) {
+      context.go(children[savedIndex].routePath);              // 👈
     }
   }
 
@@ -76,20 +74,19 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
     _childIndexByParent[_selectedParentIndex] = index;
     _childControllers[_selectedParentIndex].animateTo(index);
 
-    final parentTitle = MenuScreenMapping.parentTitles[_selectedParentIndex];
-    final childRoutes = MenuScreenMapping.getRoutesForParent(parentTitle);
-    if (index < childRoutes.length) {
-      context.go(childRoutes[index]);
+    final children = MenuItem.parentMenus[_selectedParentIndex].children;  // 👈
+    if (index < children.length) {
+      context.go(children[index].routePath);                               // 👈
     }
   }
 
   void _handleMenuSelection(String value) {
     switch (value) {
       case 'users':
-        _navigateWithTabSync(UserScreen.routePath, 'Dữ liệu cơ bản');
+        _navigateWithTabSync(UserScreen.routePath);        // 👈 bỏ tham số parentTitle
         break;
       case 'permissions':
-        _navigateWithTabSync(PermissionScreen.routePath, 'Dữ liệu cơ bản');
+        _navigateWithTabSync(PermissionScreen.routePath);
         break;
       case 'change_password':
         _showChangePasswordDialog();
@@ -100,30 +97,24 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
     }
   }
 
-  void _navigateWithTabSync(String routePath, String parentTitle) {
-    // Find parent tab index
-    final parentIndex = MenuScreenMapping.parentTitles.indexOf(parentTitle);
-    if (parentIndex == -1) return;
-
-    // Find child tab index for the route
-    final childRoutes = MenuScreenMapping.getRoutesForParent(parentTitle);
-    final childIndex = childRoutes.indexOf(routePath);
-    if (childIndex == -1) return;
-
-    // Update parent tab
-    if (_selectedParentIndex != parentIndex) {
-      _parentTabController.animateTo(parentIndex);
-      setState(() => _selectedParentIndex = parentIndex);
+  void _navigateWithTabSync(String routePath) {
+    // Tìm parent và child index dựa vào routePath trong MenuItem
+    for (int i = 0; i < MenuItem.parentMenus.length; i++) {         // 👈
+      final children = MenuItem.parentMenus[i].children;
+      for (int j = 0; j < children.length; j++) {
+        if (children[j].routePath == routePath) {
+          if (_selectedParentIndex != i) {
+            _parentTabController.animateTo(i);
+            setState(() => _selectedParentIndex = i);
+          }
+          _childIndexByParent[i] = j;
+          _childControllers[i].animateTo(j);
+          context.push(routePath);
+          return;
+        }
+      }
     }
-
-    // Update child tab
-    _childIndexByParent[parentIndex] = childIndex;
-    _childControllers[parentIndex].animateTo(childIndex);
-
-    // Navigate to the route
-    context.push(routePath);
   }
-
   void _showChangePasswordDialog() {
     showDialog(
       context: context,
@@ -139,7 +130,7 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Đóng'),
+            child: Text(context.l10n.close),
           ),
         ],
       ),
@@ -150,18 +141,18 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.logout, color: AppColors.error),
-            SizedBox(width: 8),
-            Text('Xác nhận đăng xuất'),
+            const Icon(Icons.logout, color: AppColors.error),
+            const SizedBox(width: 8),
+            Text(context.l10n.sign_out),
           ],
         ),
-        content: const Text('Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?'),
+        content: Text(context.l10n.confirm_sign_out),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Hủy'),
+            child: Text(context.l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () {
@@ -173,7 +164,7 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
               backgroundColor: AppColors.error,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Đăng xuất'),
+            child: Text(context.l10n.sign_out),
           ),
         ],
       ),
@@ -206,44 +197,44 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
             tooltip: 'Tài khoản',
             onSelected: (value) => _handleMenuSelection(value),
             itemBuilder: (BuildContext context) => [
-              const PopupMenuItem<String>(
+              PopupMenuItem<String>(
                 value: 'users',
                 child: Row(
                   children: [
-                    Icon(Icons.people, color: AppColors.iconSecondary, size: 20),
-                    SizedBox(width: 12),
-                    Text('Danh sách tài khoản'),
+                    const Icon(Icons.people, color: AppColors.iconSecondary, size: 20),
+                    const SizedBox(width: 12),
+                    Text(context.l10n.account_list),
                   ],
                 ),
               ),
-              const PopupMenuItem<String>(
+              PopupMenuItem<String>(
                 value: 'permissions',
                 child: Row(
                   children: [
-                    Icon(Icons.admin_panel_settings, color: AppColors.iconSecondary, size: 20),
-                    SizedBox(width: 12),
-                    Text('Danh sách vai trò'),
+                    const Icon(Icons.admin_panel_settings, color: AppColors.iconSecondary, size: 20),
+                    const SizedBox(width: 12),
+                    Text(context.l10n.permission_list),
                   ],
                 ),
               ),
-              const PopupMenuItem<String>(
+              PopupMenuItem<String>(
                 value: 'change_password',
                 child: Row(
                   children: [
-                    Icon(Icons.lock_reset, color: AppColors.iconSecondary, size: 20),
-                    SizedBox(width: 12),
-                    Text('Đổi mật khẩu'),
+                    const Icon(Icons.lock_reset, color: AppColors.iconSecondary, size: 20),
+                    const SizedBox(width: 12),
+                    Text(context.l10n.change_pass),
                   ],
                 ),
               ),
               const PopupMenuDivider(),
-              const PopupMenuItem<String>(
+              PopupMenuItem<String>(
                 value: 'logout',
                 child: Row(
                   children: [
-                    Icon(Icons.logout, color: AppColors.iconError, size: 20),
-                    SizedBox(width: 12),
-                    Text('Đăng xuất', style: TextStyle(color: AppColors.textError)),
+                    const Icon(Icons.logout, color: AppColors.iconError, size: 20),
+                    const SizedBox(width: 12),
+                    Text(context.l10n.sign_out, style: TextStyle(color: AppColors.textError)),
                   ],
                 ),
               ),
@@ -270,7 +261,7 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
             tabAlignment: TabAlignment.start,
             tabs: MenuItem.parentMenus.map((menu) => Tab(
               icon: Icon(menu.icon),
-              text: menu.title,
+              text: menu.title(context.l10n),
             )).toList(),
           ),
         ),
@@ -285,7 +276,7 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
           onTap: _handleChildTabChange,
           tabs: MenuItem.parentMenus[_selectedParentIndex].children.map((child) => Tab(
               icon: Icon(child.icon),
-              text: child.title,
+              text: child.title(context.l10n),
             )).toList(),
         ),
       ),

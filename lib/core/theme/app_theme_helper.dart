@@ -46,6 +46,10 @@ class AppThemeHelper {
       suffixIcon: suffixIcon,
       errorText: errorText,
       border: InputBorder.none,
+      labelStyle: const TextStyle(
+        fontWeight: FontWeight.bold,
+        color: AppColors.infoLight,
+      ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(
@@ -84,6 +88,8 @@ class AppThemeHelper {
     return ElevatedButton.styleFrom(
       backgroundColor: backgroundColor ?? AppColors.buttonPrimary,
       foregroundColor: foregroundColor ?? AppColors.textOnPrimary,
+      disabledBackgroundColor: AppColors.brandSecondaryLight,
+      disabledForegroundColor: AppColors.textOnAccent,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),

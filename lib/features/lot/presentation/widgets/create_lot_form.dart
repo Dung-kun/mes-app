@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:template_catra_mobile/config/locale/app_localizations_ext.dart';
+import 'package:template_catra_mobile/core/theme/app_colors.dart';
 import 'package:template_catra_mobile/features/lot/presentation/providers/lot_provider.dart';
 
 class CreateLotForm extends ConsumerStatefulWidget {
@@ -31,40 +33,30 @@ class _CreateLotFormState extends ConsumerState<CreateLotForm> {
       _isSubmitting = true;
     });
 
-    try {
-      await ref.read(lotProvider.notifier).createLot(
-        code: _codeController.text.trim(),
-        description: _descriptionController.text.trim(), // In real app, get from auth provider
-      );
+    final result = await ref.read(lotProvider.notifier).createLot(
+      code: _codeController.text.trim(),
+      description: _descriptionController.text.trim(), // In real app, get from auth provider
+    );
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Tạo lô thành công!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        
-        // Clear form
-        _codeController.clear();
-        _descriptionController.clear();
-        _formKey.currentState?.reset();
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Lỗi khi tạo lô'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSubmitting = false;
-        });
-      }
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: result 
+            ? Text(context.l10n.lot_created_successfully)
+            : Text(context.l10n.lot_creation_failed),
+          backgroundColor: result ? AppColors.success : AppColors.error,
+        ),
+      );
+      
+      // Clear form
+      _codeController.clear();
+      _descriptionController.clear();
+      _formKey.currentState?.reset();
+    }
+    if (mounted) {
+      setState(() {
+        _isSubmitting = false;
+      });
     }
   }
 
@@ -85,34 +77,33 @@ class _CreateLotFormState extends ConsumerState<CreateLotForm> {
                 TextFormField(
                   controller: _codeController,
                   decoration: InputDecoration(
-                    labelText: 'Mã lô',
-                    hintText: 'Nhập mã lô',
-                    border: InputBorder.none,
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: Colors.grey.shade200,
-                        width: 1,
-                      ),
+                    labelText: context.l10n.material_batch_code,
+                    labelStyle: const TextStyle(
+                      fontWeight: FontWeight.bold,
                     ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: Colors.blue.shade300,
+                    hintText: context.l10n.material_batch_code,
+                    border:  outline,
+                    enabledBorder:  outline,
+                    focusedBorder: outline.copyWith(
+                      borderSide: const BorderSide(
+                        color: AppColors.brandSecondaryLight,
                         width: 1.5,
                       ),
                     ),
+      
                     filled: true,
                     fillColor: Colors.grey.shade50,
                     prefixIcon: const Icon(Icons.code, color: Colors.grey),
+                    
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 14,
                     ),
                   ),
+                  style: const TextStyle(color: AppColors.textPrimary),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Vui lòng nhâp mã lô';
+                      return context.l10n.lot_code_required;
                     }
                     return null;
                   },
@@ -122,20 +113,16 @@ class _CreateLotFormState extends ConsumerState<CreateLotForm> {
                 TextFormField(
                   controller: _descriptionController,
                   decoration: InputDecoration(
-                    labelText: 'Tên lô',
-                    hintText: 'Nhập tên lô',
-                    border: InputBorder.none,
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: Colors.grey.shade200,
-                        width: 1,
-                      ),
+                    labelText: context.l10n.material_batch_name,
+                    hintText: context.l10n.material_batch_name,
+                    labelStyle: const TextStyle(
+                      fontWeight: FontWeight.bold,
                     ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: Colors.blue.shade300,
+                    border: outline,
+                    enabledBorder: outline,
+                    focusedBorder: outline.copyWith(
+                      borderSide: const BorderSide(
+                        color: AppColors.brandSecondaryLight,
                         width: 1.5,
                       ),
                     ),
@@ -147,9 +134,10 @@ class _CreateLotFormState extends ConsumerState<CreateLotForm> {
                       vertical: 14,
                     ),
                   ),
+                  style: const TextStyle(color: AppColors.textPrimary),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Vui lòng nhâp tên lô';
+                      return context.l10n.lot_description_required;
                     }
                     return null;
                   },
@@ -166,10 +154,10 @@ class _CreateLotFormState extends ConsumerState<CreateLotForm> {
                       foregroundColor: Colors.white,
                     ),
                     child: _isSubmitting || isCreating
-                        ? const Row(
+                        ?  Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              SizedBox(
+                              const SizedBox(
                                 width: 20,
                                 height: 20,
                                 child: CircularProgressIndicator(
@@ -177,13 +165,13 @@ class _CreateLotFormState extends ConsumerState<CreateLotForm> {
                                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                 ),
                               ),
-                              SizedBox(width: 12),
-                              Text('Đang tạo...'),
+                              const SizedBox(width: 12),
+                              Text(context.l10n.creating),
                             ],
                           )
-                        : const Text(
-                            'THÊM',
-                            style: TextStyle(
+                        : Text(
+                            context.l10n.add,
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
@@ -197,4 +185,12 @@ class _CreateLotFormState extends ConsumerState<CreateLotForm> {
       ],
     );
   }
+
+  final outline = OutlineInputBorder(
+    borderRadius: BorderRadius.circular(12),
+    borderSide: const BorderSide(
+      color: AppColors.borderLight,
+      width: 1,
+    ),
+  );
 }

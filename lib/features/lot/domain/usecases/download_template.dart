@@ -6,7 +6,7 @@ class DownloadTemplateUseCase {
 
   DownloadTemplateUseCase({required this.repository});
 
-  Future<Result<void>> call() async {
+  Future<Result<String>> call() async {
     return await repository.downloadTemplate();
   }
 }

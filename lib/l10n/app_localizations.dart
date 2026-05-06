@@ -5371,6 +5371,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unknown error'**
   String get error_unknown;
+
+  /// Shown when device has no internet
+  ///
+  /// In en, this message translates to:
+  /// **'No internet connection'**
+  String get no_internet;
+
+  /// Shown when request times out
+  ///
+  /// In en, this message translates to:
+  /// **'Connection timeout, please try again'**
+  String get timeout;
+
+  /// Token expired or unauthorized
+  ///
+  /// In en, this message translates to:
+  /// **'Session expired, please login again'**
+  String get session_expired;
+
+  /// Login failed
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid username or password'**
+  String get invalid_credentials;
+
+  /// Forbidden action
+  ///
+  /// In en, this message translates to:
+  /// **'You do not have permission to perform this action'**
+  String get no_permission;
+
+  /// Resource not found
+  ///
+  /// In en, this message translates to:
+  /// **'Data not found'**
+  String get not_found;
+
+  /// Conflict data
+  ///
+  /// In en, this message translates to:
+  /// **'Data already exists'**
+  String get already_exists;
+
+  /// Validation error
+  ///
+  /// In en, this message translates to:
+  /// **'Data already exists'**
+  String get existed_input;
+
+  /// Bad request
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid request'**
+  String get bad_request;
+
+  /// Internal server error
+  ///
+  /// In en, this message translates to:
+  /// **'Server error, please try again later'**
+  String get server_error;
+
+  /// Server down or maintenance
+  ///
+  /// In en, this message translates to:
+  /// **'Service temporarily unavailable'**
+  String get service_unavailable;
+
+  /// Fallback error
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown error occurred'**
+  String get unknown_error;
 }
 
 class _AppLocalizationsDelegate

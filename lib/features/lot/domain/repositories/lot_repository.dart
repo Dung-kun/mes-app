@@ -30,6 +30,6 @@ abstract class LotRepository {
     bool replace = false,
   });
 
-  Future<Result<void>> downloadTemplate();
+  Future<Result<String>> downloadTemplate();
 }
 

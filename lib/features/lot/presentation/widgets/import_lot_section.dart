@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:template_catra_mobile/core/theme/app_colors.dart';
+import 'package:template_catra_mobile/config/locale/app_localizations_ext.dart';
+import 'package:template_catra_mobile/core/ui/dialog/import_error_dialog.dart';
+import 'package:template_catra_mobile/core/ui/snackbar/snackbar_extension.dart';
 import 'package:template_catra_mobile/features/lot/presentation/providers/lot_provider.dart';
 
 class ImportLotSection extends ConsumerStatefulWidget {
@@ -14,226 +17,108 @@ class ImportLotSection extends ConsumerStatefulWidget {
 class _ImportLotSectionState extends ConsumerState<ImportLotSection> {
   PlatformFile? _selectedFile;
   bool _replaceData = false;
+  bool _isDownloading = false; // ✅ track download state riêng
 
   Future<void> _pickFile() async {
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['xlsx', 'xls'],
         allowMultiple: false,
       );
 
-      if (result != null && result.files.single.path != null) {
-        final file = result.files.single;
-        final fileName = file.name.toLowerCase();
-        
-        // Validate file extension
-        if (!fileName.endsWith('.xlsx') && !fileName.endsWith('.xls')) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Vui lòng chọn tệp Excel (.xlsx hoặc .xls)'),
-                backgroundColor: AppColors.error,
-              ),
-            );
-          }
-          return;
-        }
+      if (!mounted) return;
 
-        setState(() {
-          _selectedFile = file;
-        });
-        
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Đã chọn tệp: ${file.name}'),
-              backgroundColor: AppColors.success,
-            ),
-          );
-        }
-      } else {
-        // User cancelled the picker
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Đã hủy chọn tệp'),
-              backgroundColor: AppColors.warning,
-            ),
-          );
-        }
+      if (result == null || result.files.single.path == null) {
+        context.showSnack(context.l10n.file_cancelled, type: SnackType.warning);
+        return;
       }
+
+      final file = result.files.single;
+      // ✅ Validation thừa vì đã filter qua allowedExtensions — xóa đi
+      setState(() => _selectedFile = file);
+      context.showSnack(
+        '${context.l10n.file_selected}: ${file.name}',
+        type: SnackType.success,
+      );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi khi chọn tệp: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        context.showSnack('${context.l10n.error}: $e', type: SnackType.error);
       }
     }
   }
 
   Future<void> _downloadTemplate() async {
+    if (_isDownloading) return; // ✅ guard double tap
+    
+    setState(() => _isDownloading = true);
+    
     try {
-      // Show loading message
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Đang tải xuống tệp Excel...'),
-            backgroundColor: AppColors.info,
-            duration: Duration(seconds: 1),
-          ),
-        );
-      }
+      context.showSnack(context.l10n.downloading);
+      final result = await ref.read(lotProvider.notifier).downloadTemplate();
 
-      // Call the actual download functionality
-      await ref.read(lotProvider.notifier).downloadTemplate();
+      if (!mounted) return;
 
-      // Show success message
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Tải xuống tệp Excel thành công!'),
-            backgroundColor: AppColors.success,
-          ),
-        );
+      if (result.isNotEmpty) {
+        context.showSnack(context.l10n.import_file_success, type: SnackType.success);
+      } else {
+        context.showSnack(context.l10n.import_file_failed, type: SnackType.warning);
       }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi khi tải xuống tệp: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
+    } finally {
+      if (mounted) setState(() => _isDownloading = false); // ✅ luôn reset dù lỗi
     }
   }
 
   Future<void> _importFile() async {
     if (_selectedFile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Vui lòng chọn tệp Excel'),
-          backgroundColor: AppColors.warning,
-        ),
-      );
+      context.showSnack(context.l10n.validate_excel_file, type: SnackType.warning);
       return;
     }
 
-    try {
-      await ref.read(lotProvider.notifier).importLots(
-        file: _selectedFile!,
-        replace: _replaceData,
-      );
+    // ✅ Bỏ try/catch — provider đã handle error qua importResult
+    await ref.read(lotProvider.notifier).importLots(
+      file: _selectedFile!,
+      replace: _replaceData,
+    );
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Nhập dữ liệu thành công!'),
-            backgroundColor: AppColors.success,
-          ),
-        );
-        
-        // Clear selection
-        setState(() {
-          _selectedFile = null;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi khi nhập tệp: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
+    if (mounted) {
+      setState(() => _selectedFile = null);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-  final isImporting = ref.watch(lotProvider.select((s) => s.isImporting)); // ✅ select thay vì watch toàn bộ
-  ref.listen(
-    lotProvider.select((s) => s.importResult),
-    (previous, next) {
-      if (next == null) return;
+    final isImporting = ref.watch(lotProvider.select((s) => s.isImporting));
 
-      if (next.success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.message),
-            backgroundColor: Colors.green,
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.message),
-            backgroundColor: Colors.red,
-          ),
-        );
+    ref.listen(
+      lotProvider.select((s) => s.importResult),
+      (previous, next) {
+        if (next == null) return;
 
-        if (next.hasErrors) {
-          showDialog(
-            context: context,
-            builder: (_) => AlertDialog(
-              title: const Row(
-                children: [
-                  Icon(Icons.error_outline, color: Colors.red),
-                  SizedBox(width: 8),
-                  Text('Chi tiết lỗi import'),
-                ],
-              ),
-              content: SizedBox(
-                width: double.maxFinite,
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  itemCount: next.errors.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
-                  itemBuilder: (_, index) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${index + 1}. ',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        Expanded(child: Text(next.errors[index])),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              actions: [
-                ElevatedButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Đóng'),
-                ),
-              ],
-            ),
-          );
+        if (next.success) {
+          context.showSnack(next.message, type: SnackType.success);
+        } else {
+          context.showSnack(next.message, type: SnackType.error);
+          if (next.hasErrors) {
+            ImportErrorDialog.show(context, next.errors);
+          }
         }
-      }
 
-      ref.read(lotProvider.notifier).clearImportResult();
-    },
-  );
+        ref.read(lotProvider.notifier).clearImportResult();
+      },
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // File picker section
+        // File picker
         InkWell(
           onTap: _pickFile,
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              border: Border.all(color: AppColors.borderLight, width: 1),
+              border: Border.all(color: AppColors.borderLight),
               borderRadius: BorderRadius.circular(12),
               color: AppColors.inputBackground,
             ),
@@ -242,15 +127,10 @@ class _ImportLotSectionState extends ConsumerState<ImportLotSection> {
               children: [
                 Row(
                   children: [
-                    Icon(
-                      Icons.file_upload_outlined,
-                      color: AppColors.primary,
-                    ),
+                    const Icon(Icons.file_upload_outlined, color: AppColors.primary),
                     const SizedBox(width: 8),
                     Text(
-                      _selectedFile != null
-                          ? 'Đã chọn: ${_selectedFile!.name}'
-                          : 'Chọn tệp Excel',
+                      _selectedFile?.name ?? context.l10n.select_excel_file, // ✅ dùng ?? cho gọn
                       style: TextStyle(
                         color: _selectedFile != null
                             ? AppColors.textPrimary
@@ -266,28 +146,31 @@ class _ImportLotSectionState extends ConsumerState<ImportLotSection> {
                   const Padding(
                     padding: EdgeInsets.only(top: 8),
                     child: Text(
-                      'Chỉ hỗ trợ tệp Excel (.xlsx, .xls)',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textTertiary,
-                      ),
+                      'Excel (.xlsx, .xls)',
+                      style: TextStyle(fontSize: 12, color: AppColors.textTertiary),
                     ),
                   ),
               ],
             ),
           ),
         ),
-        
+
         const SizedBox(height: 16),
-        
-        // Action buttons
+
         Row(
           children: [
             Expanded(
               child: OutlinedButton.icon(
-                onPressed: _downloadTemplate,
-                icon: const Icon(Icons.download),
-                label: const Text('XUẤT EXCEL'),
+                // ✅ disable khi đang download
+                onPressed: _isDownloading ? null : _downloadTemplate,
+                icon: _isDownloading
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.download),
+                label: Text(context.l10n.export_excel),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
@@ -296,7 +179,7 @@ class _ImportLotSectionState extends ConsumerState<ImportLotSection> {
             const SizedBox(width: 12),
             Expanded(
               child: ElevatedButton.icon(
-                onPressed: (isImporting) ? null : _importFile,
+                onPressed: isImporting ? null : _importFile,
                 icon: isImporting
                     ? const SizedBox(
                         width: 16,
@@ -307,7 +190,7 @@ class _ImportLotSectionState extends ConsumerState<ImportLotSection> {
                         ),
                       )
                     : const Icon(Icons.upload_file),
-                label: Text(isImporting ? 'Đang nhập...' : 'NHẬP TỆP'),
+                label: Text(isImporting ? context.l10n.loading : context.l10n.import),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
@@ -315,39 +198,31 @@ class _ImportLotSectionState extends ConsumerState<ImportLotSection> {
             ),
           ],
         ),
-        
+
         const SizedBox(height: 12),
-        
-        // Replace option
+
         Row(
           children: [
             Checkbox(
               value: _replaceData,
-              onChanged: (value) {
-                setState(() {
-                  _replaceData = value ?? false;
-                });
-              },
+              onChanged: (value) => setState(() => _replaceData = value ?? false),
               activeColor: AppColors.primary,
             ),
             Text(
-              'Thay thế dữ liệu hiện có',
-              style: TextStyle(
+              context.l10n.replace,
+              style: const TextStyle(
                 color: AppColors.textPrimary,
                 fontWeight: FontWeight.w500,
               ),
             ),
           ],
         ),
-        
+
         const SizedBox(height: 8),
-        
+
         Text(
-          'Nếu tích vào ô này, toàn bộ dữ liệu hiện có sẽ được thay thế bằng dữ liệu mới từ tệp Excel.',
-          style: TextStyle(
-            fontSize: 12,
-            color: AppColors.textSecondary,
-          ),
+          context.l10n.replace_warning,
+          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
         ),
       ],
     );
