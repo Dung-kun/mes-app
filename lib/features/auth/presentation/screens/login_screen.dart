@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:logger/logger.dart';
 import 'package:template_catra_mobile/config/locale/app_localizations_ext.dart';
 import 'package:template_catra_mobile/core/constants/app_spacing.dart';
 import 'package:template_catra_mobile/core/theme/app_colors.dart';
@@ -36,7 +35,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         _lastError = errorType;
         ErrorDialog.show(
           context: context,
-          message: mapErrorToMessage(errorType!, context.l10n),
+          message: mapErrorToMessage(errorType, context.l10n),
           title: 'Lỗi',
           onDismiss: () {
             ref.read(authControllerProvider.notifier).clearError();
@@ -51,8 +50,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
     if(authState.hasError){
-      final errorType = authState.error as ErrorType?;
-      _showErrorDialog(errorType!);
+      final error = authState.error;
+      if (error is ErrorType) {
+        _showErrorDialog(error);
+      } else {
+        _showErrorDialog(ErrorType.unknown);
+      }
     }
     return Scaffold(
       body: Container(

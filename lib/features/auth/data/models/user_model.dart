@@ -6,6 +6,7 @@ class UserModel {
   final String name;
   final String? serialNumber;
   final String? password;
+  final List<String> permissions;
   final String? token;
   final String status;
   final DateTime createdAt;
@@ -17,6 +18,7 @@ class UserModel {
     required this.name,
     this.serialNumber,
     this.password,
+    required this.permissions,
     this.token,
     required this.status,
     required this.createdAt,
@@ -26,6 +28,7 @@ class UserModel {
   factory UserModel.fromJson(Map<String, dynamic> json) {
     final token = json['token'] ?? '';
     final data = json['user'] ?? {};
+    final permissions = List<String>.from(json['permissions'] ?? []);
     return UserModel(
       id: data['id'] ?? 0,
       username: data['username'] ?? '',
@@ -34,6 +37,7 @@ class UserModel {
       password: '',
       token: token,
       status: data['status'] ?? '',
+      permissions: permissions,
       createdAt: data['created_at'] != null 
           ? DateTime.parse(data['created_at']) 
           : DateTime.now(),
@@ -50,6 +54,7 @@ class UserModel {
       'name': name,
       'serial_number': serialNumber,
       'password': password,
+      'permissions': permissions,
       'status': status,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
@@ -61,7 +66,7 @@ class UserModel {
       id: id,
       username: username,
       displayName: name, 
-      permissions: [],
+      permissions: permissions,
       serialNumber: serialNumber ?? '',
       status: status,
       token: token,
@@ -79,6 +84,7 @@ class UserModel {
       password: '',  // Password is not stored in session user
       token: sessionUser.token, // Token is not stored in session user
       status: sessionUser.status,
+      permissions: sessionUser.permissions,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
@@ -92,6 +98,7 @@ class UserModel {
     String? status,
     DateTime? createdAt,
     DateTime? updatedAt,
+    List<String>? permissions,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -103,6 +110,7 @@ class UserModel {
       updatedAt: updatedAt ?? this.updatedAt,
       password: password ?? '',
       token: token ??  '',
+      permissions: permissions ?? this.permissions,
     );
   }
 }

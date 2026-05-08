@@ -1,5 +1,7 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:template_catra_mobile/core/network/api_client.dart';
 import 'package:template_catra_mobile/core/utils/api_error_helper.dart';
@@ -54,7 +56,6 @@ class AuthDataSourceImpl implements AuthDataSource {
       };
 
       final response = await dio.post(loginEndpoint, data: data);
-      
       if (response.statusCode == 200) {
         final data = response.data;
         final user = UserModel.fromJson(data);

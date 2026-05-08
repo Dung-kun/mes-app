@@ -9,6 +9,7 @@ import 'package:template_catra_mobile/features/auth/presentation/screens/login_s
 import 'package:template_catra_mobile/features/basic_data/presentation/screens/user_screen.dart';
 import 'package:template_catra_mobile/features/basic_data/presentation/screens/permission_screen.dart';
 import 'package:template_catra_mobile/shared/navigation/models/menu_item.dart';
+import 'package:template_catra_mobile/shared/navigation/provider/menu_provider.dart';
 
 
 class AppShell extends ConsumerStatefulWidget {
@@ -26,24 +27,28 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
   final Map<int, int> _childIndexByParent = {};
 
   late List<TabController> _childControllers;
-
+  late List<MenuItem> _menus;
+  
   @override
   void initState() {
     super.initState();
+     _menus = ref.read(filteredMenusProvider);
+    _initControllers();
+  }
+
+  void _initControllers() {
     _parentTabController = TabController(
-      length: MenuItem.parentMenus.length,
+      length: _menus.length,
       vsync: this,
     );
+    _parentTabController.addListener(_handleParentTabChange);
 
-    // ✅ Tạo sẵn tất cả child controllers
-    _childControllers = MenuItem.parentMenus.map((menu) {
+    _childControllers = _menus.map((menu) {
       return TabController(
         length: menu.children.length,
         vsync: this,
       );
     }).toList();
-
-    _parentTabController.addListener(_handleParentTabChange);
   }
 
   @override
@@ -61,7 +66,7 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
     if (newIndex == _selectedParentIndex) return;
     setState(() => _selectedParentIndex = newIndex);
 
-    final children = MenuItem.parentMenus[newIndex].children;  // 👈
+    final children = _menus[newIndex].children;  // 👈
     final savedIndex = (_childIndexByParent[newIndex] ?? 0)
         .clamp(0, children.length - 1);
 
@@ -74,7 +79,7 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
     _childIndexByParent[_selectedParentIndex] = index;
     _childControllers[_selectedParentIndex].animateTo(index);
 
-    final children = MenuItem.parentMenus[_selectedParentIndex].children;  // 👈
+    final children = _menus[_selectedParentIndex].children;  // 👈
     if (index < children.length) {
       context.go(children[index].routePath);                               // 👈
     }
@@ -99,8 +104,8 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
 
   void _navigateWithTabSync(String routePath) {
     // Tìm parent và child index dựa vào routePath trong MenuItem
-    for (int i = 0; i < MenuItem.parentMenus.length; i++) {         // 👈
-      final children = MenuItem.parentMenus[i].children;
+    for (int i = 0; i < _menus.length; i++) {         // 👈
+      final children = _menus[i].children;
       for (int j = 0; j < children.length; j++) {
         if (children[j].routePath == routePath) {
           if (_selectedParentIndex != i) {
@@ -173,7 +178,7 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
-    final session = ref.watch(currentSessionProvider);
+    final session = ref.watch(sessionUserProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -199,6 +204,7 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
             itemBuilder: (BuildContext context) => [
               PopupMenuItem<String>(
                 value: 'users',
+                enabled: session?.permissions.contains('xem-nguoi-dung') ?? false,
                 child: Row(
                   children: [
                     const Icon(Icons.people, color: AppColors.iconSecondary, size: 20),
@@ -209,6 +215,7 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
               ),
               PopupMenuItem<String>(
                 value: 'permissions',
+                enabled: session?.permissions.contains('xem-quyen') ?? false,
                 child: Row(
                   children: [
                     const Icon(Icons.admin_panel_settings, color: AppColors.iconSecondary, size: 20),
@@ -234,7 +241,7 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
                   children: [
                     const Icon(Icons.logout, color: AppColors.iconError, size: 20),
                     const SizedBox(width: 12),
-                    Text(context.l10n.sign_out, style: TextStyle(color: AppColors.textError)),
+                    Text(context.l10n.sign_out, style: const TextStyle(color: AppColors.textError)),
                   ],
                 ),
               ),
@@ -259,7 +266,7 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
             controller: _parentTabController,
             isScrollable: true,
             tabAlignment: TabAlignment.start,
-            tabs: MenuItem.parentMenus.map((menu) => Tab(
+            tabs: _menus.map((menu) => Tab(
               icon: Icon(menu.icon),
               text: menu.title(context.l10n),
             )).toList(),
@@ -274,7 +281,7 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
           isScrollable: true,
           tabAlignment: TabAlignment.center,
           onTap: _handleChildTabChange,
-          tabs: MenuItem.parentMenus[_selectedParentIndex].children.map((child) => Tab(
+          tabs: _menus[_selectedParentIndex].children.map((child) => Tab(
               icon: Icon(child.icon),
               text: child.title(context.l10n),
             )).toList(),

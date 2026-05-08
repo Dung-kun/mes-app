@@ -54,7 +54,7 @@ class PaginationControls extends StatelessWidget {
               Text(
                 '$startItem-$endItem của $totalCount',
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
               const SizedBox(width: 12),
