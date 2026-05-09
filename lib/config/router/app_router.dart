@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:template_catra_mobile/config/router/router_notifier.dart';
+import 'package:template_catra_mobile/features/auth/presentation/providers/session_provider.dart';
 import 'package:template_catra_mobile/features/auth/presentation/screens/login_screen.dart';
 import 'package:template_catra_mobile/features/basic_data/presentation/screens/basket_screen.dart';
 import 'package:template_catra_mobile/features/basic_data/presentation/screens/cap_phat_the_screen.dart';
@@ -12,6 +13,9 @@ import 'package:template_catra_mobile/features/basic_data/presentation/screens/l
 import 'package:template_catra_mobile/features/basic_data/presentation/screens/material_batch_code_screen.dart';
 import 'package:template_catra_mobile/features/basic_data/presentation/screens/permission_screen.dart';
 import 'package:template_catra_mobile/features/basic_data/presentation/screens/product_screen.dart';
+import 'package:template_catra_mobile/features/products/presentation/screens/parent_product_screen.dart';
+import 'package:template_catra_mobile/features/products/presentation/screens/child_product_screen.dart';
+import 'package:template_catra_mobile/features/products/presentation/screens/product_card_screen.dart';
 import 'package:template_catra_mobile/features/basic_data/presentation/screens/role_screen.dart';
 import 'package:template_catra_mobile/features/basic_data/presentation/screens/service_card_screen.dart';
 import 'package:template_catra_mobile/features/basic_data/presentation/screens/user_screen.dart';
@@ -52,7 +56,6 @@ import 'package:template_catra_mobile/features/tui_le/presentation/screens/to_ho
 import 'package:template_catra_mobile/features/tui_le/presentation/screens/to_hop_theo_size_screen.dart';
 import 'package:template_catra_mobile/features/tui_le/presentation/screens/tui_le_chi_tiet_screen.dart';
 import 'package:template_catra_mobile/features/groups/presentation/screens/groups_screen.dart';
-import 'package:template_catra_mobile/features/products/presentation/screens/products_screen.dart';
 import 'package:template_catra_mobile/features/profile/presentation/screens/profile_screen.dart';
 import 'package:template_catra_mobile/features/settings/presentation/screens/settings_screen.dart';
 import 'package:template_catra_mobile/features/workers/presentation/screens/worker_detail_screen.dart';
@@ -131,6 +134,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               // Basic Data Routes
               GoRoute(path: MaterialBatchCodeScreen.routePath, name: MaterialBatchCodeScreen.routeName, builder: (context, state) => const MaterialBatchCodeScreen()),
               GoRoute(path: ProductScreen.routePath, name: ProductScreen.routeName, builder: (context, state) => const ProductScreen()),
+              GoRoute(path: ParentProductScreen.routePath, name: ParentProductScreen.routeName, builder: (context, state) => const ParentProductScreen()),
+              GoRoute(path: '${ChildProductScreen.routePath}/:id', name: ChildProductScreen.routeName, builder: (context, state) => ChildProductScreen(
+                parentProductId: state.pathParameters['id'] ?? '',
+              )),
+              GoRoute(path: '${ProductCardScreen.routePath}/:productId', name: ProductCardScreen.routeName, builder: (context, state) => ProductCardScreen(
+                productId: state.pathParameters['productId'] ?? '',
+              )),
               GoRoute(path: WorkerBpScreen.routePath, name: WorkerBpScreen.routeName, builder: (context, state) => const WorkerBpScreen()),
               GoRoute(path: BasketScreen.routePath, name: BasketScreen.routeName, builder: (context, state) => const BasketScreen()),
               GoRoute(path: CoiScreen.routePath, name: CoiScreen.routeName, builder: (context, state) => const CoiScreen()),
@@ -211,15 +221,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ],
           ),
           // Branch 3 - Products
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: ProductsScreen.routePath,
-                name: ProductsScreen.routeName,
-                builder: (context, state) => const ProductsScreen(),
-              ),
-            ],
-          ),
+          // StatefulShellBranch(
+          //   routes: [
+          //     GoRoute(
+          //       path: ProductsScreen.routePath,
+          //       name: ProductsScreen.routeName,
+          //       builder: (context, state) => const ProductsScreen(),
+          //     ),
+          //   ],
+          // ),
           // Branch 4 - Settings
           StatefulShellBranch(
             routes: [
@@ -235,3 +245,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
+String? _guardPermission(Ref ref, String permission, GoRouterState state) {
+  final user = ref.read(sessionUserProvider);
+  if (user == null || user.cannot(permission)) return '/home';
+  return null;
+}
+
+String? _guardRole(Ref ref, String role, GoRouterState state) {
+  final user = ref.read(sessionUserProvider);
+  if (user == null || !user.hasRole(role)) return '/home';
+  return null;
+}
+
+String? _guardPermissionAny(Ref ref, List<String> perms, GoRouterState state) {
+  final user = ref.read(sessionUserProvider);
+  if (user == null || !user.canAny(perms)) return '/home';
+  return null;
+}

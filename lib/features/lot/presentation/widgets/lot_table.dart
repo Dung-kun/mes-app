@@ -21,8 +21,8 @@ class LotTable extends ConsumerWidget {
     if (isLoading && lots.isEmpty) {
       return const Center(
         child: Padding(
-          padding: EdgeInsets.all(10),
-          child: CircularProgressIndicator(strokeWidth: 1),
+          padding: EdgeInsets.all(32),
+          child: CircularProgressIndicator(),
         ),
       );
     }
@@ -64,51 +64,60 @@ class LotTable extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Table
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: DataTable(
-            columns: [
-              const DataColumn(
-                label: Text('STT'),
-                numeric: true,
+        LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minWidth: constraints.maxWidth,
+                ),
+                child: DataTable(
+                  columns: [
+                    const DataColumn(
+                      label: Text('STT'),
+                      numeric: true,
+                    ),
+                    DataColumn(
+                      label: Text(context.l10n.material_batch_code),
+                    ),
+                    DataColumn(
+                      label: Text(context.l10n.material_batch_name),
+                    ),
+                    DataColumn(
+                      label: Text(context.l10n.created_by),
+                    ),
+                    DataColumn(
+                      label: Text(context.l10n.updated_by),
+                    ),
+                    DataColumn(
+                      label: Text(context.l10n.actions),
+                    ),
+                  ],
+                  rows: lots.asMap().entries.map((entry) {
+                    final index = entry.key + (currentPage - 1) * pageSize;
+                    final lot = entry.value;
+                    return LotTableRow(
+                      context: context,
+                      lot: lot,
+                      index: index + 1,
+                      onDelete: () => _deleteLot(context, ref, lot.id),
+                      onEdit: () => _editLot(context, ref, lot),
+                    );
+                  }).toList(),
+                  columnSpacing: 16,
+                  headingRowColor: WidgetStateProperty.all(
+                    Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
+                  ),
+                  headingTextStyle: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  ),
+                  dataRowMaxHeight: double.infinity,
+                ),
               ),
-              DataColumn(
-                label: Text(context.l10n.material_batch_code),
-              ),
-              DataColumn(
-                label: Text(context.l10n.material_batch_name),
-              ),
-              DataColumn(
-                label: Text(context.l10n.created_by),
-              ),
-              DataColumn(
-                label: Text(context.l10n.updated_by),
-              ),
-              DataColumn(
-                label: Text(context.l10n.actions),
-              ),
-            ],
-            rows: lots.asMap().entries.map((entry) {
-              final index = entry.key + (currentPage - 1) * pageSize;
-              final lot = entry.value;
-              return LotTableRow(
-                context: context,
-                lot: lot,
-                index: index + 1,
-                onDelete: () => _deleteLot(context, ref, lot.id),
-                onEdit: () => _editLot(context, ref, lot),
-              );
-            }).toList(),
-            columnSpacing: 16,
-            headingRowColor: WidgetStateProperty.all(
-              Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
-            ),
-            headingTextStyle: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onPrimaryContainer,
-            ),
-            dataRowMaxHeight: double.infinity,
-          ),
+            );
+          }
         ),
         
         // Pagination

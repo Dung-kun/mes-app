@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:template_catra_mobile/core/storage/token_storage.dart';
 import 'package:template_catra_mobile/features/auth/data/datasources/auth_remote_datasource.dart';

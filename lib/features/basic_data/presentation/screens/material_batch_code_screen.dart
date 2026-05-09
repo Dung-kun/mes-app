@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:template_catra_mobile/core/constants/app_spacing.dart';
 import 'package:template_catra_mobile/core/utils/api_error_helper.dart';
 import 'package:template_catra_mobile/shared/widgets/app_card.dart';
 import 'package:template_catra_mobile/shared/widgets/error_dialog.dart';
@@ -112,7 +113,7 @@ class _MaterialBatchCodeScreenState extends ConsumerState<MaterialBatchCodeScree
               
               LayoutBuilder(
                 builder: (context, constraints) {
-                  final isTablet = constraints.maxWidth >= 768;
+                  final isTablet = constraints.maxWidth >= 468;
 
                   if (isTablet) {
                     return Row(
@@ -122,14 +123,21 @@ class _MaterialBatchCodeScreenState extends ConsumerState<MaterialBatchCodeScree
                           flex: 2,
                           child: Column(
                             children: [
-                              AppCard(
-                                title: context.l10n.manual_add_title,
-                                child: const CreateLotForm(),
+                              ConstrainedBox(
+                                constraints: const BoxConstraints(maxWidth: AppSpacing.maxWidthAppCard),
+                                child: AppCard(
+                                  title: context.l10n.manual_add_title,
+                                  child: const CreateLotForm(),
+                                ),
                               ),
                               const SizedBox(height: 24),
-                              AppCard(
-                                title: context.l10n.import_excel,
-                                child: const ImportLotSection(),
+
+                              ConstrainedBox(
+                                constraints: const BoxConstraints(maxWidth: AppSpacing.maxWidthAppCard),
+                                child: AppCard(
+                                  title: context.l10n.import_excel,
+                                  child: const ImportLotSection(),
+                                ),
                               ),
                             ],
                           ),
@@ -140,14 +148,20 @@ class _MaterialBatchCodeScreenState extends ConsumerState<MaterialBatchCodeScree
                   // SECTION 1: CREATE LOT FORM
                     return Column(
                       children: [
-                        AppCard(
-                          title: context.l10n.manual_add_title,
-                          child: const CreateLotForm(),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: AppSpacing.maxWidthAppCard),
+                          child: AppCard(
+                            title: context.l10n.manual_add_title,
+                            child: const CreateLotForm(),
+                          ),
                         ),
                         const SizedBox(height: 24),
-                        AppCard(
-                          title: context.l10n.import_excel,
-                          child: const ImportLotSection(),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: AppSpacing.maxWidthAppCard),
+                          child: AppCard(
+                            title: context.l10n.import_excel,
+                            child: const ImportLotSection(),
+                          ),
                         ),
                       ],
                     );

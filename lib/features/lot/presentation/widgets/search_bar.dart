@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:template_catra_mobile/config/locale/app_localizations_ext.dart';
-import '../providers/lot_provider.dart';
+import 'package:template_catra_mobile/features/lot/presentation/providers/lot_provider.dart';
 
 class LotSearchBar extends ConsumerStatefulWidget {
   const LotSearchBar({super.key});
@@ -57,6 +57,7 @@ class _LotSearchBarState extends ConsumerState<LotSearchBar> {
     final totalCount = ref.watch(lotProvider.select((s) => s.totalCount));
 
     return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
       children: [
         Expanded(
           child: TextField(

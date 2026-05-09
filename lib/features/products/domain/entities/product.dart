@@ -3,11 +3,82 @@ class Product {
     required this.id,
     required this.code,
     required this.description,
-    required this.note,
+    required this.parentId,
+    this.wWin,
+    this.wMax,
+    this.dinhmuc,
+    this.note,
+    this.objectCount,
+    required this.createdBy,
+    this.editedBy,
+    required this.createdAt,
+    required this.updatedAt,
   });
 
-  final String id;
+  final int id;
   final String code;
   final String description;
-  final String note;
+  final String parentId;
+  final double? wWin;
+  final double? wMax;
+  final String? dinhmuc;
+  final String? note;
+  final String? objectCount;
+  final String createdBy;
+  final String? editedBy;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  List<Object?> get props => [
+        id,
+        code,
+        description,
+        parentId,
+        wWin,
+        wMax,
+        dinhmuc,
+        note,
+        objectCount,
+        createdBy,
+        editedBy,
+        createdAt,
+        updatedAt,
+      ];
+
+  Product copyWith({
+    int? id,
+    String? code,
+    String? description,
+    String? parentId,
+    double? wWin,
+    double? wMax,
+    String? dinhmuc,
+    String? note,
+    String? objectCount,
+    String? createdBy,
+    String? editedBy,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return Product(
+      id: id ?? this.id,
+      code: code ?? this.code,
+      description: description ?? this.description,
+      parentId: parentId ?? this.parentId,
+      wWin: wWin ?? this.wWin,
+      wMax: wMax ?? this.wMax,
+      dinhmuc: dinhmuc ?? this.dinhmuc,
+      note: note ?? this.note,
+      objectCount: objectCount ?? this.objectCount,
+      createdBy: createdBy ?? this.createdBy,
+      editedBy: editedBy ?? this.editedBy,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return 'Product(id: $id, code: $code, description: $description, parentId: $parentId, wWin: $wWin, wMax: $wMax, dinhmuc: $dinhmuc, note: $note, objectCount: $objectCount, createdBy: $createdBy, editedBy: $editedBy, createdAt: $createdAt, updatedAt: $updatedAt)';
+  }
 }

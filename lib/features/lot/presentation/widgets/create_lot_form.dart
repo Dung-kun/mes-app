@@ -64,125 +64,78 @@ class _CreateLotFormState extends ConsumerState<CreateLotForm> {
   Widget build(BuildContext context) {
     final isCreating = ref.watch(lotProvider.select((s) => s.isCreating));
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 600),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextFormField(
-                  controller: _codeController,
-                  decoration: InputDecoration(
-                    labelText: context.l10n.material_batch_code,
-                    labelStyle: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
-                    hintText: context.l10n.material_batch_code,
-                    border:  outline,
-                    enabledBorder:  outline,
-                    focusedBorder: outline.copyWith(
-                      borderSide: const BorderSide(
-                        color: AppColors.brandSecondaryLight,
-                        width: 1.5,
-                      ),
-                    ),
-      
-                    filled: true,
-                    fillColor: Colors.grey.shade50,
-                    prefixIcon: const Icon(Icons.code, color: Colors.grey),
-                    
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                  ),
-                  style: const TextStyle(color: AppColors.textPrimary),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return context.l10n.lot_code_required;
-                    }
-                    return null;
-                  },
-                  enabled: !_isSubmitting,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 600),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextFormField(
+              controller: _codeController,
+              decoration: InputDecoration(
+                labelText: context.l10n.material_batch_code,
+                border: const OutlineInputBorder(),
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return context.l10n.material_batch_code_required;
+                }
+                return null;
+              },
+              enabled: !_isSubmitting,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _descriptionController,
+              decoration: InputDecoration(
+                labelText: context.l10n.material_batch_name,
+                border: const OutlineInputBorder(),
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return context.l10n.material_batch_name_required;
+                }
+                return null;
+              },
+              enabled: !_isSubmitting,
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: (_isSubmitting || isCreating) ? null : _handleSubmit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
                 ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _descriptionController,
-                  decoration: InputDecoration(
-                    labelText: context.l10n.material_batch_name,
-                    hintText: context.l10n.material_batch_name,
-                    labelStyle: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
-                    border: outline,
-                    enabledBorder: outline,
-                    focusedBorder: outline.copyWith(
-                      borderSide: const BorderSide(
-                        color: AppColors.brandSecondaryLight,
-                        width: 1.5,
-                      ),
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey.shade50,
-                    prefixIcon: const Icon(Icons.description, color: Colors.grey),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                  ),
-                  style: const TextStyle(color: AppColors.textPrimary),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return context.l10n.lot_description_required;
-                    }
-                    return null;
-                  },
-                  enabled: !_isSubmitting,
-                ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: (_isSubmitting || isCreating) ? null : _handleSubmit,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: _isSubmitting || isCreating
-                        ?  Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Text(context.l10n.creating),
-                            ],
-                          )
-                        : Text(
-                            context.l10n.add,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                child: _isSubmitting || isCreating
+                    ?  Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           ),
-                  ),
-                ),
-              ],
+                          const SizedBox(width: 12),
+                          Text(context.l10n.creating),
+                        ],
+                      )
+                    : Text(
+                        context.l10n.add,
+                        style: const TextStyle(
+                          fontSize: 16,
+                        ),
+                      ),
+              ),
             ),
-          ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
