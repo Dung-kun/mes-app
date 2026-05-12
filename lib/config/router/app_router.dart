@@ -135,8 +135,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(path: MaterialBatchCodeScreen.routePath, name: MaterialBatchCodeScreen.routeName, builder: (context, state) => const MaterialBatchCodeScreen()),
               GoRoute(path: ProductScreen.routePath, name: ProductScreen.routeName, builder: (context, state) => const ProductScreen()),
               GoRoute(path: ParentProductScreen.routePath, name: ParentProductScreen.routeName, builder: (context, state) => const ParentProductScreen()),
-              GoRoute(path: '${ChildProductScreen.routePath}/:id', name: ChildProductScreen.routeName, builder: (context, state) => ChildProductScreen(
-                parentProductId: state.pathParameters['id'] ?? '',
+              GoRoute(path: '${ChildProductScreen.routePath}/:parentProductId', name: ChildProductScreen.routeName, builder: (context, state) => ChildProductScreen(
+                parentProductId: state.pathParameters['parentProductId'] ?? '',
               )),
               GoRoute(path: '${ProductCardScreen.routePath}/:productId', name: ProductCardScreen.routeName, builder: (context, state) => ProductCardScreen(
                 productId: state.pathParameters['productId'] ?? '',

@@ -37,7 +37,7 @@ class ProductModel {
       code: json['code'] ?? '',
       description: json['description'] ?? '',
       parentId: json['parent_id']?.toString() ?? '0',
-      wWin: json['w_win'] != null ? double.tryParse(json['w_win'].toString()) : null,
+      wWin: json['w_min'] != null ? double.tryParse(json['w_min'].toString()) : null,
       wMax: json['w_max'] != null ? double.tryParse(json['w_max'].toString()) : null,
       dinhmuc: json['dinhmuc'],
       note: json['note'],

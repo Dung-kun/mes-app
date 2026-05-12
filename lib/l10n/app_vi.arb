@@ -537,9 +537,9 @@
     "please_enter_card_code_to_search_information": "Vui lòng nhập mã thẻ để tìm kiếm thông tin",
     "card_": "Thẻ",
     "card_id": "Mã Thẻ",
-    "Card_type": "Loại thẻ",
-    "Code": "Mã",
-    "Name": "Tên",
+    "card_type": "Loại thẻ",
+    "code": "Mã",
+    "name": "Tên",
 
     "rfid_card_created_successfully": "Thêm mới thẻ nhân viên thành công",
     "rfid_card_updated_successfully": "Cập nhật thẻ nhân viên thành công",
